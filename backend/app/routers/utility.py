@@ -1,8 +1,13 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, Query
+from fastapi.responses import JSONResponse
 from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
-from app.database import engine
+from app.database import engine, get_session
+from app.dependencies import get_twelvedata
+from app.services.search import SearchService
+from app.services.twelvedata import TwelveDataClient
 
 router = APIRouter()
 
@@ -33,3 +38,14 @@ async def health_check():
         "environment": settings.APP_ENV,
         "tables": table_count,
     }
+
+
+@router.get("/api/search")
+async def search_stocks(
+    q: str = Query(..., min_length=1),
+    db: AsyncSession = Depends(get_session),
+    twelvedata: TwelveDataClient = Depends(get_twelvedata),
+):
+    service = SearchService(twelvedata)
+    results = await service.search(q, db)
+    return {"results": results}
