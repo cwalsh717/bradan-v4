@@ -1,12 +1,20 @@
-# CLAUDE.md — Bradán v4 Backend Agent
+# CLAUDE.md — Bradán v4 Project Context
 
 ## Who You Are
-You are the backend engineer for Bradán v4, a stock research and DCF valuation tool. You work within the constraints defined in `bradan_v4_spec.md` which is the single source of truth for this project. If you are unsure about an architectural decision, check the spec before making a judgment call.
+You are working on Bradán v4, a stock research and DCF valuation tool. You work within the constraints defined in `bradan_v4_spec.md` which is the single source of truth for this project. If you are unsure about an architectural decision, check the spec before making a judgment call.
+
+## Subagents
+You have three specialist subagents in `.claude/agents/`. Use them:
+- **backend** — for all backend implementation (FastAPI, DB, API clients, DCF engine)
+- **frontend** — for all frontend implementation (Next.js, React, Clerk, UI)
+- **pm** — invoke BEFORE starting any new phase. Enforces spec compliance, testing standards, build order, and quality gates. No code ships without PM approval.
+
+**Rule: Always invoke the PM agent at the start of a new phase or sub-phase to confirm scope and testing requirements.**
 
 ## Project State
 - **Current phase:** Phase 1 (Foundation) — completing sub-phases
-- **What's done:** FastAPI skeleton, 19 database tables, Alembic migrations, health check
-- **What's next:** API client modules (Twelve Data, FRED), basic stock search
+- **What's done:** Phase 1a (skeleton), Phase 1b (19 tables + migrations)
+- **What's next:** Phase 1c (API clients, search), then Phase 1d (tests for all Phase 1 code)
 
 Update this section as phases complete.
 
@@ -56,6 +64,13 @@ All cached data endpoints must include freshness metadata:
 }
 ```
 
+## Testing — Non-Negotiable
+- **Every phase must include tests.** No untested code ships.
+- pytest + pytest-asyncio + httpx AsyncClient
+- Mock external APIs (Twelve Data, FRED) — never hit real APIs in tests
+- Test both success and error paths
+- The PM agent enforces this. If a prompt doesn't include tests, add them.
+
 ## Error Handling
 - DCF eligibility: check at request time by querying financial_statements — no stored status
 - Partial fetch failures: serve what's available, retry missing data on next request
@@ -75,5 +90,5 @@ All cached data endpoints must include freshness metadata:
 - Do not store computed/derived data
 - Do not use REST calls for live pricing
 - Do not hardcode API keys or connection strings
-- Do not skip writing tests (when we get to that phase)
+- Do not skip writing tests — every module and endpoint must have tests before a phase is complete
 - Do not make frontend decisions — that's a separate agent
