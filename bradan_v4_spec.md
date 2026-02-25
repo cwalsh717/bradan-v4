@@ -550,11 +550,18 @@ Three subagents in `.claude/agents/`:
 - `pm.md` — enforces spec compliance, testing, build order, quality gates
 
 ### Development Workflow
-1. Plan in main assistant (claude.ai project) → generate prompt
-2. Feed prompt to Claude Code → it builds, referencing CLAUDE.md and spec
-3. Commit and push after each sub-phase
-4. Debrief in main assistant → update spec + CLAUDE.md if needed
-5. Download updated files, commit to repo, repeat
+1. Plan phase in Claude Code using `/phase-plan N`
+2. Review and approve the plan
+3. Execute — sub-agents build, hooks auto-format, `/check` gates quality
+4. After each phase completes, update `bradan_v4_spec.md`: mark completion log, add any discoveries (schema changes, edge cases found, API response corrections, new decisions)
+5. Commit spec + code together
+6. Debrief in claude.ai project if needed for next phase planning
+
+### Spec Update Rules
+- The spec is a living document updated after every phase
+- Implementation discoveries get written back into the spec
+- Schema changes must be reflected in the spec before the phase is marked complete
+- The completion log must be updated with sub-phase detail (see Phase 1 for reference)
 
 ### Future Tooling (Planned, Not Implemented)
 - **Puppeteer** — Phase 5+: end-to-end frontend testing and DCF valuation PDF export rendering
