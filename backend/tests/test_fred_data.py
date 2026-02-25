@@ -29,19 +29,19 @@ async def test_fetch_series_upserts_and_returns_count():
     client = _make_client()
     session = _make_session()
 
-    client.get_series = AsyncMock(return_value=[
-        {"date": "2024-01-02", "value": 3.88},
-        {"date": "2024-01-03", "value": 3.92},
-        {"date": "2024-01-04", "value": 3.95},
-    ])
+    client.get_series = AsyncMock(
+        return_value=[
+            {"date": "2024-01-02", "value": 3.88},
+            {"date": "2024-01-03", "value": 3.92},
+            {"date": "2024-01-04", "value": 3.95},
+        ]
+    )
 
     service = FredDataService(client, session)
     count = await service.fetch_series("DGS10", observation_start="2024-01-01")
 
     assert count == 3
-    client.get_series.assert_called_once_with(
-        "DGS10", observation_start="2024-01-01"
-    )
+    client.get_series.assert_called_once_with("DGS10", observation_start="2024-01-01")
     session.execute.assert_called_once()
     session.commit.assert_called_once()
 

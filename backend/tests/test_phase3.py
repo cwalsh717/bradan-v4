@@ -356,6 +356,7 @@ async def test_fred_scheduler_fetch_and_cache():
     mock_service.fetch_daily_update = AsyncMock(
         return_value={"DGS10": 5, "DGS2": 5, "BAMLC0A0CM": 3, "BAMLH0A0HYM2": 2}
     )
+
     # Return latest values for each series
     async def mock_get_latest(series_id):
         data = {

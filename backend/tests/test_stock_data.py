@@ -12,6 +12,7 @@ from app.services.twelvedata import TwelveDataClient
 # Helpers
 # ------------------------------------------------------------------
 
+
 def _mock_session():
     """Create a mock AsyncSession with standard behaviour."""
     session = AsyncMock()
@@ -40,8 +41,8 @@ def _make_stock(stock_id=1, symbol="AAPL"):
 # _parse_split_ratio (pure unit tests)
 # ------------------------------------------------------------------
 
-class TestParseSplitRatio:
 
+class TestParseSplitRatio:
     def test_valid_four_to_one(self):
         assert _parse_split_ratio("4:1") == (4, 1)
 
@@ -72,8 +73,8 @@ class TestParseSplitRatio:
 # fetch_profile
 # ------------------------------------------------------------------
 
-class TestFetchProfile:
 
+class TestFetchProfile:
     async def test_fetch_profile_upserts_and_returns_stock(self):
         """fetch_profile calls get_stock_profile, executes upsert, re-selects, returns Stock."""
         client = _mock_client()
@@ -129,8 +130,8 @@ class TestFetchProfile:
 # fetch_financials
 # ------------------------------------------------------------------
 
-class TestFetchFinancials:
 
+class TestFetchFinancials:
     async def test_fetch_all_six_combinations(self):
         """Income, balance_sheet, cash_flow x annual, quarterly = 6 fetcher calls."""
         client = _mock_client()
@@ -220,8 +221,8 @@ class TestFetchFinancials:
 # fetch_price_history
 # ------------------------------------------------------------------
 
-class TestFetchPriceHistory:
 
+class TestFetchPriceHistory:
     async def test_first_fetch_full_history(self):
         """No existing data -> fetches full 5000 candles with no start_date."""
         client = _mock_client()
@@ -252,7 +253,9 @@ class TestFetchPriceHistory:
         client.get_time_series = AsyncMock(return_value=candles)
 
         # session.execute: first call is the last-date query, rest are candle inserts
-        session.execute = AsyncMock(side_effect=[last_date_result, MagicMock(), MagicMock()])
+        session.execute = AsyncMock(
+            side_effect=[last_date_result, MagicMock(), MagicMock()]
+        )
 
         service = StockDataService(client, session)
         count = await service.fetch_price_history(1, "AAPL")
@@ -335,7 +338,13 @@ class TestFetchPriceHistory:
         last_date_result.scalar_one_or_none.return_value = None
 
         candles = [
-            {"open": "100.0", "high": "101.0", "low": "99.0", "close": "100.5", "volume": "100"},
+            {
+                "open": "100.0",
+                "high": "101.0",
+                "low": "99.0",
+                "close": "100.5",
+                "volume": "100",
+            },
             {
                 "datetime": "2024-01-02",
                 "open": "100.0",
@@ -385,17 +394,19 @@ class TestFetchPriceHistory:
 # fetch_dividends
 # ------------------------------------------------------------------
 
-class TestFetchDividends:
 
+class TestFetchDividends:
     async def test_insert_new_dividends(self):
         """New dividends are added via session.add."""
         client = _mock_client()
         session = _mock_session()
 
-        client.get_dividends = AsyncMock(return_value=[
-            {"ex_date": "2024-08-10", "amount": "0.25"},
-            {"ex_date": "2024-11-10", "amount": "0.26"},
-        ])
+        client.get_dividends = AsyncMock(
+            return_value=[
+                {"ex_date": "2024-08-10", "amount": "0.25"},
+                {"ex_date": "2024-11-10", "amount": "0.26"},
+            ]
+        )
 
         # Existing dates query returns empty set
         existing_result = MagicMock()
@@ -416,10 +427,12 @@ class TestFetchDividends:
         client = _mock_client()
         session = _mock_session()
 
-        client.get_dividends = AsyncMock(return_value=[
-            {"ex_date": "2024-08-10", "amount": "0.25"},
-            {"ex_date": "2024-11-10", "amount": "0.26"},
-        ])
+        client.get_dividends = AsyncMock(
+            return_value=[
+                {"ex_date": "2024-08-10", "amount": "0.25"},
+                {"ex_date": "2024-11-10", "amount": "0.26"},
+            ]
+        )
 
         # One date already exists
         existing_result = MagicMock()
@@ -452,10 +465,12 @@ class TestFetchDividends:
         client = _mock_client()
         session = _mock_session()
 
-        client.get_dividends = AsyncMock(return_value=[
-            {"amount": "0.25"},  # no ex_date
-            {"ex_date": "2024-11-10", "amount": "0.26"},
-        ])
+        client.get_dividends = AsyncMock(
+            return_value=[
+                {"amount": "0.25"},  # no ex_date
+                {"ex_date": "2024-11-10", "amount": "0.26"},
+            ]
+        )
 
         existing_result = MagicMock()
         scalars_mock = MagicMock()
@@ -474,16 +489,18 @@ class TestFetchDividends:
 # fetch_splits
 # ------------------------------------------------------------------
 
-class TestFetchSplits:
 
+class TestFetchSplits:
     async def test_insert_new_splits_with_ratio_fields(self):
         """Splits with explicit ratio_from/ratio_to fields are used directly."""
         client = _mock_client()
         session = _mock_session()
 
-        client.get_splits = AsyncMock(return_value=[
-            {"date": "2020-08-31", "ratio_from": "1", "ratio_to": "4"},
-        ])
+        client.get_splits = AsyncMock(
+            return_value=[
+                {"date": "2020-08-31", "ratio_from": "1", "ratio_to": "4"},
+            ]
+        )
 
         existing_result = MagicMock()
         scalars_mock = MagicMock()
@@ -506,9 +523,11 @@ class TestFetchSplits:
         client = _mock_client()
         session = _mock_session()
 
-        client.get_splits = AsyncMock(return_value=[
-            {"date": "2020-08-31", "description": "4:1"},
-        ])
+        client.get_splits = AsyncMock(
+            return_value=[
+                {"date": "2020-08-31", "description": "4:1"},
+            ]
+        )
 
         existing_result = MagicMock()
         scalars_mock = MagicMock()
@@ -529,9 +548,11 @@ class TestFetchSplits:
         client = _mock_client()
         session = _mock_session()
 
-        client.get_splits = AsyncMock(return_value=[
-            {"date": "2020-08-31", "description": "weird split"},
-        ])
+        client.get_splits = AsyncMock(
+            return_value=[
+                {"date": "2020-08-31", "description": "weird split"},
+            ]
+        )
 
         existing_result = MagicMock()
         scalars_mock = MagicMock()
@@ -552,10 +573,12 @@ class TestFetchSplits:
         client = _mock_client()
         session = _mock_session()
 
-        client.get_splits = AsyncMock(return_value=[
-            {"date": "2020-08-31", "description": "4:1"},
-            {"date": "2014-06-09", "description": "7:1"},
-        ])
+        client.get_splits = AsyncMock(
+            return_value=[
+                {"date": "2020-08-31", "description": "4:1"},
+                {"date": "2014-06-09", "description": "7:1"},
+            ]
+        )
 
         existing_result = MagicMock()
         scalars_mock = MagicMock()
@@ -587,17 +610,19 @@ class TestFetchSplits:
 # fetch_earnings
 # ------------------------------------------------------------------
 
-class TestFetchEarnings:
 
+class TestFetchEarnings:
     async def test_insert_new_earnings(self):
         """New earnings dates are added via session.add."""
         client = _mock_client()
         session = _mock_session()
 
-        client.get_earnings_calendar = AsyncMock(return_value=[
-            {"date": "2025-01-30", "fiscal_quarter": "Q1 2025", "confirmed": True},
-            {"date": "2025-04-30", "fiscal_quarter": "Q2 2025", "confirmed": False},
-        ])
+        client.get_earnings_calendar = AsyncMock(
+            return_value=[
+                {"date": "2025-01-30", "fiscal_quarter": "Q1 2025", "confirmed": True},
+                {"date": "2025-04-30", "fiscal_quarter": "Q2 2025", "confirmed": False},
+            ]
+        )
 
         existing_result = MagicMock()
         scalars_mock = MagicMock()
@@ -617,9 +642,11 @@ class TestFetchEarnings:
         client = _mock_client()
         session = _mock_session()
 
-        client.get_earnings_calendar = AsyncMock(return_value=[
-            {"date": "2025-01-30", "fiscal_quarter": "Q1 2025", "confirmed": True},
-        ])
+        client.get_earnings_calendar = AsyncMock(
+            return_value=[
+                {"date": "2025-01-30", "fiscal_quarter": "Q1 2025", "confirmed": True},
+            ]
+        )
 
         # First execute: load existing report_dates
         existing_dates_result = MagicMock()
@@ -664,10 +691,12 @@ class TestFetchEarnings:
         client = _mock_client()
         session = _mock_session()
 
-        client.get_earnings_calendar = AsyncMock(return_value=[
-            {"fiscal_quarter": "Q1 2025", "confirmed": True},  # no 'date' key
-            {"date": "2025-04-30", "fiscal_quarter": "Q2 2025", "confirmed": False},
-        ])
+        client.get_earnings_calendar = AsyncMock(
+            return_value=[
+                {"fiscal_quarter": "Q1 2025", "confirmed": True},  # no 'date' key
+                {"date": "2025-04-30", "fiscal_quarter": "Q2 2025", "confirmed": False},
+            ]
+        )
 
         existing_result = MagicMock()
         scalars_mock = MagicMock()
@@ -686,10 +715,20 @@ class TestFetchEarnings:
         client = _mock_client()
         session = _mock_session()
 
-        client.get_earnings_calendar = AsyncMock(return_value=[
-            {"date": "2025-01-30", "fiscal_quarter": "Q1 2025", "confirmed": True},   # existing
-            {"date": "2025-04-30", "fiscal_quarter": "Q2 2025", "confirmed": False},   # new
-        ])
+        client.get_earnings_calendar = AsyncMock(
+            return_value=[
+                {
+                    "date": "2025-01-30",
+                    "fiscal_quarter": "Q1 2025",
+                    "confirmed": True,
+                },  # existing
+                {
+                    "date": "2025-04-30",
+                    "fiscal_quarter": "Q2 2025",
+                    "confirmed": False,
+                },  # new
+            ]
+        )
 
         existing_dates_result = MagicMock()
         scalars_mock = MagicMock()
@@ -719,8 +758,8 @@ class TestFetchEarnings:
 # fetch_full_profile (orchestrator)
 # ------------------------------------------------------------------
 
-class TestFetchFullProfile:
 
+class TestFetchFullProfile:
     async def test_calls_all_methods(self):
         """fetch_full_profile calls profile + all 5 data methods."""
         client = _mock_client()
@@ -729,13 +768,26 @@ class TestFetchFullProfile:
         mock_stock = _make_stock(stock_id=42, symbol="AAPL")
         service = StockDataService(client, session)
 
-        with patch.object(service, "fetch_profile", new_callable=AsyncMock) as mock_profile, \
-             patch.object(service, "fetch_financials", new_callable=AsyncMock) as mock_fin, \
-             patch.object(service, "fetch_price_history", new_callable=AsyncMock) as mock_prices, \
-             patch.object(service, "fetch_dividends", new_callable=AsyncMock) as mock_divs, \
-             patch.object(service, "fetch_splits", new_callable=AsyncMock) as mock_splits, \
-             patch.object(service, "fetch_earnings", new_callable=AsyncMock) as mock_earnings:
-
+        with (
+            patch.object(
+                service, "fetch_profile", new_callable=AsyncMock
+            ) as mock_profile,
+            patch.object(
+                service, "fetch_financials", new_callable=AsyncMock
+            ) as mock_fin,
+            patch.object(
+                service, "fetch_price_history", new_callable=AsyncMock
+            ) as mock_prices,
+            patch.object(
+                service, "fetch_dividends", new_callable=AsyncMock
+            ) as mock_divs,
+            patch.object(
+                service, "fetch_splits", new_callable=AsyncMock
+            ) as mock_splits,
+            patch.object(
+                service, "fetch_earnings", new_callable=AsyncMock
+            ) as mock_earnings,
+        ):
             mock_profile.return_value = mock_stock
 
             result = await service.fetch_full_profile("AAPL")
@@ -759,13 +811,26 @@ class TestFetchFullProfile:
         mock_stock = _make_stock(stock_id=42, symbol="AAPL")
         service = StockDataService(client, session)
 
-        with patch.object(service, "fetch_profile", new_callable=AsyncMock) as mock_profile, \
-             patch.object(service, "fetch_financials", new_callable=AsyncMock) as mock_fin, \
-             patch.object(service, "fetch_price_history", new_callable=AsyncMock) as mock_prices, \
-             patch.object(service, "fetch_dividends", new_callable=AsyncMock) as mock_divs, \
-             patch.object(service, "fetch_splits", new_callable=AsyncMock) as mock_splits, \
-             patch.object(service, "fetch_earnings", new_callable=AsyncMock) as mock_earnings:
-
+        with (
+            patch.object(
+                service, "fetch_profile", new_callable=AsyncMock
+            ) as mock_profile,
+            patch.object(
+                service, "fetch_financials", new_callable=AsyncMock
+            ) as mock_fin,
+            patch.object(
+                service, "fetch_price_history", new_callable=AsyncMock
+            ) as mock_prices,
+            patch.object(
+                service, "fetch_dividends", new_callable=AsyncMock
+            ) as mock_divs,
+            patch.object(
+                service, "fetch_splits", new_callable=AsyncMock
+            ) as mock_splits,
+            patch.object(
+                service, "fetch_earnings", new_callable=AsyncMock
+            ) as mock_earnings,
+        ):
             mock_profile.return_value = mock_stock
             # Financials fails
             mock_fin.side_effect = Exception("API timeout on financials")
@@ -793,13 +858,16 @@ class TestFetchFullProfile:
         mock_stock = _make_stock(stock_id=1, symbol="AAPL")
         service = StockDataService(client, session)
 
-        with patch.object(service, "fetch_profile", new_callable=AsyncMock) as mock_profile, \
-             patch.object(service, "fetch_financials", new_callable=AsyncMock), \
-             patch.object(service, "fetch_price_history", new_callable=AsyncMock), \
-             patch.object(service, "fetch_dividends", new_callable=AsyncMock), \
-             patch.object(service, "fetch_splits", new_callable=AsyncMock), \
-             patch.object(service, "fetch_earnings", new_callable=AsyncMock):
-
+        with (
+            patch.object(
+                service, "fetch_profile", new_callable=AsyncMock
+            ) as mock_profile,
+            patch.object(service, "fetch_financials", new_callable=AsyncMock),
+            patch.object(service, "fetch_price_history", new_callable=AsyncMock),
+            patch.object(service, "fetch_dividends", new_callable=AsyncMock),
+            patch.object(service, "fetch_splits", new_callable=AsyncMock),
+            patch.object(service, "fetch_earnings", new_callable=AsyncMock),
+        ):
             mock_profile.return_value = mock_stock
 
             await service.fetch_full_profile("AAPL")

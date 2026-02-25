@@ -1,13 +1,11 @@
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
-import httpx
 import pytest
 from httpx import ASGITransport, AsyncClient
 
 from app.main import app
 from app.services.search import SearchService
 from app.services.twelvedata import TwelveDataClient
-from tests.conftest import make_twelvedata_transport
 
 
 @pytest.fixture
@@ -23,10 +21,17 @@ async def test_search_endpoint_returns_results():
     from app.dependencies import get_twelvedata
 
     mock_td = AsyncMock(spec=TwelveDataClient)
-    mock_td.symbol_search = AsyncMock(return_value=[
-        {"symbol": "AAPL", "instrument_name": "Apple Inc", "exchange": "NASDAQ",
-         "instrument_type": "Common Stock", "currency": "USD"},
-    ])
+    mock_td.symbol_search = AsyncMock(
+        return_value=[
+            {
+                "symbol": "AAPL",
+                "instrument_name": "Apple Inc",
+                "exchange": "NASDAQ",
+                "instrument_type": "Common Stock",
+                "currency": "USD",
+            },
+        ]
+    )
 
     mock_db = AsyncMock()
     mock_result = MagicMock()
@@ -93,10 +98,17 @@ async def test_search_service_queries_db_first():
 async def test_search_service_falls_back_to_twelvedata():
     """SearchService hits Twelve Data when local results < 5."""
     mock_td = AsyncMock(spec=TwelveDataClient)
-    mock_td.symbol_search = AsyncMock(return_value=[
-        {"symbol": "AAPL", "instrument_name": "Apple Inc", "exchange": "NASDAQ",
-         "instrument_type": "Common Stock", "currency": "USD"},
-    ])
+    mock_td.symbol_search = AsyncMock(
+        return_value=[
+            {
+                "symbol": "AAPL",
+                "instrument_name": "Apple Inc",
+                "exchange": "NASDAQ",
+                "instrument_type": "Common Stock",
+                "currency": "USD",
+            },
+        ]
+    )
 
     mock_db = AsyncMock()
     mock_result = MagicMock()
@@ -116,12 +128,24 @@ async def test_search_service_falls_back_to_twelvedata():
 async def test_search_deduplication():
     """Same symbol from DB and API should not duplicate."""
     mock_td = AsyncMock(spec=TwelveDataClient)
-    mock_td.symbol_search = AsyncMock(return_value=[
-        {"symbol": "AAPL", "instrument_name": "Apple Inc", "exchange": "NASDAQ",
-         "instrument_type": "Common Stock", "currency": "USD"},
-        {"symbol": "AAPLC", "instrument_name": "Apple CEDEAR", "exchange": "BCBA",
-         "instrument_type": "Depositary Receipt", "currency": "USD"},
-    ])
+    mock_td.symbol_search = AsyncMock(
+        return_value=[
+            {
+                "symbol": "AAPL",
+                "instrument_name": "Apple Inc",
+                "exchange": "NASDAQ",
+                "instrument_type": "Common Stock",
+                "currency": "USD",
+            },
+            {
+                "symbol": "AAPLC",
+                "instrument_name": "Apple CEDEAR",
+                "exchange": "BCBA",
+                "instrument_type": "Depositary Receipt",
+                "currency": "USD",
+            },
+        ]
+    )
 
     # One local AAPL result
     mock_stock = MagicMock()
@@ -147,10 +171,17 @@ async def test_search_deduplication():
 async def test_search_cached_flag():
     """Local stocks have cached=True, API-only have cached=False."""
     mock_td = AsyncMock(spec=TwelveDataClient)
-    mock_td.symbol_search = AsyncMock(return_value=[
-        {"symbol": "MSFT", "instrument_name": "Microsoft", "exchange": "NASDAQ",
-         "instrument_type": "Common Stock", "currency": "USD"},
-    ])
+    mock_td.symbol_search = AsyncMock(
+        return_value=[
+            {
+                "symbol": "MSFT",
+                "instrument_name": "Microsoft",
+                "exchange": "NASDAQ",
+                "instrument_type": "Common Stock",
+                "currency": "USD",
+            },
+        ]
+    )
 
     mock_stock = MagicMock()
     mock_stock.symbol = "AAPL"

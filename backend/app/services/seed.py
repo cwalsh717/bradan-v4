@@ -64,9 +64,14 @@ async def seed_dashboard_tickers(session: AsyncSession) -> int:
     inserted = 0
     updated = 0
 
-    for category, symbol, display_name, data_source, display_format, display_order in (
-        DASHBOARD_TICKERS
-    ):
+    for (
+        category,
+        symbol,
+        display_name,
+        data_source,
+        display_format,
+        display_order,
+    ) in DASHBOARD_TICKERS:
         if symbol in existing:
             ticker = existing[symbol]
             ticker.category = category

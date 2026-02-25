@@ -38,9 +38,7 @@ class TwelveDataClient:
 
     def _track_request(self):
         now = time.monotonic()
-        self._request_timestamps = [
-            t for t in self._request_timestamps if now - t < 60
-        ]
+        self._request_timestamps = [t for t in self._request_timestamps if now - t < 60]
         self._request_timestamps.append(now)
         count = len(self._request_timestamps)
         if count > RATE_LIMIT * 0.8:
@@ -104,14 +102,10 @@ class TwelveDataClient:
         self, symbol: str, period: str = "quarterly"
     ) -> List[dict]:
         """Get balance sheets. 100 credits per call."""
-        data = await self._get(
-            "/balance_sheet", {"symbol": symbol, "period": period}
-        )
+        data = await self._get("/balance_sheet", {"symbol": symbol, "period": period})
         return data.get("balance_sheet", [])
 
-    async def get_cash_flow(
-        self, symbol: str, period: str = "quarterly"
-    ) -> List[dict]:
+    async def get_cash_flow(self, symbol: str, period: str = "quarterly") -> List[dict]:
         """Get cash flow statements. 100 credits per call."""
         data = await self._get("/cash_flow", {"symbol": symbol, "period": period})
         return data.get("cash_flow", [])

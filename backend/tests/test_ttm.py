@@ -126,24 +126,52 @@ async def test_compute_ttm_with_4_quarters():
     service = TTMService(session)
 
     income_stmts = [
-        _make_statement(date(2024, 6, 30), {"revenue": "4000", "net_income": "400", "currency": "USD"}),
-        _make_statement(date(2024, 3, 31), {"revenue": "3000", "net_income": "300", "currency": "USD"}),
-        _make_statement(date(2023, 12, 31), {"revenue": "2000", "net_income": "200", "currency": "USD"}),
-        _make_statement(date(2023, 9, 30), {"revenue": "1000", "net_income": "100", "currency": "USD"}),
+        _make_statement(
+            date(2024, 6, 30),
+            {"revenue": "4000", "net_income": "400", "currency": "USD"},
+        ),
+        _make_statement(
+            date(2024, 3, 31),
+            {"revenue": "3000", "net_income": "300", "currency": "USD"},
+        ),
+        _make_statement(
+            date(2023, 12, 31),
+            {"revenue": "2000", "net_income": "200", "currency": "USD"},
+        ),
+        _make_statement(
+            date(2023, 9, 30),
+            {"revenue": "1000", "net_income": "100", "currency": "USD"},
+        ),
     ]
 
     bs_stmts = [
-        _make_statement(date(2024, 6, 30), {"total_assets": "50000", "total_debt": "10000"}),
-        _make_statement(date(2024, 3, 31), {"total_assets": "48000", "total_debt": "9500"}),
-        _make_statement(date(2023, 12, 31), {"total_assets": "46000", "total_debt": "9000"}),
-        _make_statement(date(2023, 9, 30), {"total_assets": "44000", "total_debt": "8500"}),
+        _make_statement(
+            date(2024, 6, 30), {"total_assets": "50000", "total_debt": "10000"}
+        ),
+        _make_statement(
+            date(2024, 3, 31), {"total_assets": "48000", "total_debt": "9500"}
+        ),
+        _make_statement(
+            date(2023, 12, 31), {"total_assets": "46000", "total_debt": "9000"}
+        ),
+        _make_statement(
+            date(2023, 9, 30), {"total_assets": "44000", "total_debt": "8500"}
+        ),
     ]
 
     cf_stmts = [
-        _make_statement(date(2024, 6, 30), {"operating_cash_flow": "500", "capex": "-100"}),
-        _make_statement(date(2024, 3, 31), {"operating_cash_flow": "400", "capex": "-80"}),
-        _make_statement(date(2023, 12, 31), {"operating_cash_flow": "300", "capex": "-60"}),
-        _make_statement(date(2023, 9, 30), {"operating_cash_flow": "200", "capex": "-40"}),
+        _make_statement(
+            date(2024, 6, 30), {"operating_cash_flow": "500", "capex": "-100"}
+        ),
+        _make_statement(
+            date(2024, 3, 31), {"operating_cash_flow": "400", "capex": "-80"}
+        ),
+        _make_statement(
+            date(2023, 12, 31), {"operating_cash_flow": "300", "capex": "-60"}
+        ),
+        _make_statement(
+            date(2023, 9, 30), {"operating_cash_flow": "200", "capex": "-40"}
+        ),
     ]
 
     service._fetch_quarters = AsyncMock(
@@ -205,9 +233,7 @@ async def test_compute_ttm_no_data_returns_none():
     session = _make_session()
     service = TTMService(session)
 
-    service._fetch_quarters = AsyncMock(
-        side_effect=_mock_fetch_quarters()
-    )
+    service._fetch_quarters = AsyncMock(side_effect=_mock_fetch_quarters())
 
     result = await service.compute_ttm(stock_id=1)
 

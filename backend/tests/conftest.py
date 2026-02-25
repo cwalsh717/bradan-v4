@@ -1,9 +1,5 @@
-from unittest.mock import AsyncMock, MagicMock, patch
-
 import httpx
-import pytest
 import pytest_asyncio
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.services.fred import FredClient
 from app.services.twelvedata import TwelveDataClient
@@ -37,13 +33,17 @@ async def mock_fred():
 
 def make_twelvedata_transport(response_data, status_code=200):
     """Create a mock transport that returns the given response."""
+
     def handler(request):
         return httpx.Response(status_code, json=response_data)
+
     return httpx.MockTransport(handler)
 
 
 def make_fred_transport(response_data, status_code=200):
     """Create a mock transport that returns the given response."""
+
     def handler(request):
         return httpx.Response(status_code, json=response_data)
+
     return httpx.MockTransport(handler)

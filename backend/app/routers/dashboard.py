@@ -44,9 +44,7 @@ async def get_dashboard_config(
             }
         )
 
-    categories = [
-        {"name": name, "tickers": items} for name, items in grouped.items()
-    ]
+    categories = [{"name": name, "tickers": items} for name, items in grouped.items()]
 
     return {"categories": categories}
 

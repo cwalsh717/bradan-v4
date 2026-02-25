@@ -395,6 +395,7 @@ All cached data endpoints include:
 - Growth: tied to reinvestment rate × return on capital
 - Terminal value: stable growth model with growth capped at risk-free rate
 - Terminal ROC converges toward cost of capital
+- See also: dcf_methodology.md for implementation detail, edge cases, transition mechanics, and SAP validation case.
 
 ### Key Formulas
 - **Cost of Equity** = Risk-free Rate + Levered Beta × Equity Risk Premium + Country Risk Premium
@@ -586,7 +587,14 @@ Three subagents in `.claude/agents/`:
 - [x] Phase 3e: Stock profile WebSocket (WS /api/stocks/{symbol}/stream — dynamic subscribe, 30s heartbeat, 60s TTL cleanup)
 - [x] Phase 3f: App lifecycle wiring (startup: seed tickers, start ws_manager + subscribe dashboard symbols, start fred_scheduler; shutdown: stop all)
 - [x] Phase 3g: Phase 3 test suite (20 new tests, 122 total; websockets.asyncio type annotation fixed for Python 3.9)
-- [ ] Phase 4: DCF engine
+- [x] Phase 4a: Damodaran seed service (seed_damodaran_data — 15 default_spreads, 13 country_risk_premiums, 25 damodaran_industries; idempotent check-then-insert/update)
+- [x] Phase 4b: DCF computation engine (dcf_engine.py — pure two-stage FCFF model, CAPM, WACC, synthetic ratings, linear transitions, terminal value, equity bridge, sensitivity matrix, scenario presets; SAP validation case)
+- [x] Phase 4c: Sector mapping service (SectorMappingService — fuzzy SequenceMatcher matching, financial company detection, confidence scoring, manual override)
+- [x] Phase 4d: DCF Pydantic schemas (DCFOverrides, DCFResult, SensitivityMatrix, DCFSaveRequest, SectorContext, DCFConstraints, eligibility error)
+- [x] Phase 4e: DCF orchestration service (DCFService — compute_default, compute_custom, save/list/get/delete runs, sensitivity, sector-context, summary; TTM extraction, country risk lookup, audit logging)
+- [x] Phase 4f: DCF router (11 endpoints: constraints, default, compute, save, runs CRUD, sector-context, sensitivity, summary, CSV export; auth via X-User-Id header)
+- [x] Phase 4g: App lifecycle wiring (Damodaran seed on startup, DCF router included)
+- [x] Phase 4h: Phase 4 test suite (92 new tests — 60 engine + 32 service/endpoint/seed/mapping, 214 total)
 - [ ] Phase 5: Frontend shell
 - [ ] Phase 6: Frontend pages
 - [ ] Phase 7: Portfolio

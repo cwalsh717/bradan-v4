@@ -248,9 +248,7 @@ class TwelveDataWSManager:
     async def register_profile_listener(self, symbol: str) -> None:
         """Called when a frontend client opens a stock-profile websocket."""
         self.profile_symbols[symbol] = time.monotonic()
-        already_subscribed = (
-            symbol in self.dashboard_symbols or symbol in self.prices
-        )
+        already_subscribed = symbol in self.dashboard_symbols or symbol in self.prices
         if not already_subscribed:
             await self.subscribe([symbol])
 

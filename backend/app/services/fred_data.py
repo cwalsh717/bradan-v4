@@ -64,9 +64,7 @@ class FredDataService:
         await self.session.execute(stmt)
         await self.session.commit()
 
-        logger.info(
-            "Upserted %d observations for %s", len(rows), series_id
-        )
+        logger.info("Upserted %d observations for %s", len(rows), series_id)
         return len(rows)
 
     async def fetch_all_series(
@@ -117,9 +115,7 @@ class FredDataService:
 
         return results
 
-    async def get_latest_value(
-        self, series_id: str
-    ) -> Optional[dict]:
+    async def get_latest_value(self, series_id: str) -> Optional[dict]:
         """Query DB for the most recent observation of a series.
 
         Returns {date, value} or None if no data exists.
@@ -141,9 +137,7 @@ class FredDataService:
             "value": float(row.value),
         }
 
-    async def _get_max_observation_date(
-        self, series_id: str
-    ) -> Optional[date]:
+    async def _get_max_observation_date(self, series_id: str) -> Optional[date]:
         """Get the latest observation_date stored for a given series."""
         stmt = select(func.max(FredSeries.observation_date)).where(
             FredSeries.series_id == series_id

@@ -30,10 +30,12 @@ async def test_health_has_required_fields(client):
 async def test_health_database_connected():
     """Test health reports connected when DB is reachable."""
     mock_conn = AsyncMock()
-    mock_conn.execute = AsyncMock(side_effect=[
-        None,  # SELECT 1
-        MagicMock(scalar=MagicMock(return_value=20)),  # table count
-    ])
+    mock_conn.execute = AsyncMock(
+        side_effect=[
+            None,  # SELECT 1
+            MagicMock(scalar=MagicMock(return_value=20)),  # table count
+        ]
+    )
 
     mock_engine_connect = AsyncMock()
     mock_engine_connect.__aenter__ = AsyncMock(return_value=mock_conn)

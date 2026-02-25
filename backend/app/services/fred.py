@@ -30,7 +30,11 @@ class FredClient:
     async def _get(self, endpoint: str, params: dict) -> dict:
         params["api_key"] = self.api_key
         params["file_type"] = "json"
-        logger.debug("FRED API call: %s params=%s", endpoint, {k: v for k, v in params.items() if k != "api_key"})
+        logger.debug(
+            "FRED API call: %s params=%s",
+            endpoint,
+            {k: v for k, v in params.items() if k != "api_key"},
+        )
 
         resp = await self.client.get(endpoint, params=params)
         if resp.status_code != 200:
@@ -66,10 +70,12 @@ class FredClient:
         for obs in data.get("observations", []):
             if obs.get("value") == ".":
                 continue
-            results.append({
-                "date": obs["date"],
-                "value": float(obs["value"]),
-            })
+            results.append(
+                {
+                    "date": obs["date"],
+                    "value": float(obs["value"]),
+                }
+            )
         return results
 
     async def get_latest(self, series_id: str) -> dict:

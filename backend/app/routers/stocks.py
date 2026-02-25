@@ -4,7 +4,14 @@ import asyncio
 from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Query,
+    WebSocket,
+    WebSocketDisconnect,
+)
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -38,13 +45,9 @@ router = APIRouter(prefix="/api/stocks", tags=["stocks"])
 _DEFAULT_TTL = timedelta(hours=24)
 
 
-async def _get_stock_or_404(
-    symbol: str, session: AsyncSession
-) -> Stock:
+async def _get_stock_or_404(symbol: str, session: AsyncSession) -> Stock:
     """Look up a stock by symbol and raise 404 if not found."""
-    result = await session.execute(
-        select(Stock).where(Stock.symbol == symbol.upper())
-    )
+    result = await session.execute(select(Stock).where(Stock.symbol == symbol.upper()))
     stock = result.scalar_one_or_none()
     if stock is None:
         raise HTTPException(status_code=404, detail=f"Stock '{symbol}' not found")
@@ -100,9 +103,7 @@ async def get_stock_profile(
     twelvedata: TwelveDataClient = Depends(get_twelvedata),
 ):
     """Return the stock profile, fetching from Twelve Data if not cached."""
-    result = await session.execute(
-        select(Stock).where(Stock.symbol == symbol.upper())
-    )
+    result = await session.execute(select(Stock).where(Stock.symbol == symbol.upper()))
     stock = result.scalar_one_or_none()
 
     if stock is None:
@@ -145,7 +146,9 @@ async def get_financials(
 
         data_as_of = stock.last_updated
         next_refresh = await _next_refresh_for_stock(stock, data_as_of, session)
-        return _envelope(data=ttm_data, data_as_of=data_as_of, next_refresh=next_refresh)
+        return _envelope(
+            data=ttm_data, data_as_of=data_as_of, next_refresh=next_refresh
+        )
 
     # annual or quarterly
     result = await session.execute(

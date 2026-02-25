@@ -17,12 +17,14 @@ async def _make_client(response_data, status_code=200):
 
 
 async def test_get_series_returns_date_value_dicts():
-    client = await _make_client({
-        "observations": [
-            {"date": "2025-01-10", "value": "4.25"},
-            {"date": "2025-01-11", "value": "4.30"},
-        ]
-    })
+    client = await _make_client(
+        {
+            "observations": [
+                {"date": "2025-01-10", "value": "4.25"},
+                {"date": "2025-01-11", "value": "4.30"},
+            ]
+        }
+    )
     results = await client.get_series("DGS10")
     assert len(results) == 2
     assert results[0] == {"date": "2025-01-10", "value": 4.25}
@@ -31,13 +33,15 @@ async def test_get_series_returns_date_value_dicts():
 
 
 async def test_get_series_filters_missing_data():
-    client = await _make_client({
-        "observations": [
-            {"date": "2025-01-10", "value": "4.25"},
-            {"date": "2025-01-11", "value": "."},
-            {"date": "2025-01-12", "value": "4.35"},
-        ]
-    })
+    client = await _make_client(
+        {
+            "observations": [
+                {"date": "2025-01-10", "value": "4.25"},
+                {"date": "2025-01-11", "value": "."},
+                {"date": "2025-01-12", "value": "4.35"},
+            ]
+        }
+    )
     results = await client.get_series("DGS10")
     assert len(results) == 2
     assert all(r["value"] != "." for r in results)
@@ -45,21 +49,25 @@ async def test_get_series_filters_missing_data():
 
 
 async def test_get_latest_returns_single_observation():
-    client = await _make_client({
-        "observations": [
-            {"date": "2025-01-12", "value": "4.35"},
-        ]
-    })
+    client = await _make_client(
+        {
+            "observations": [
+                {"date": "2025-01-12", "value": "4.35"},
+            ]
+        }
+    )
     result = await client.get_latest("DGS10")
     assert result == {"date": "2025-01-12", "value": 4.35}
     await client.close()
 
 
 async def test_error_response_raises_fred_error():
-    client = await _make_client({
-        "error_code": 400,
-        "error_message": "Bad Request: series_id is required",
-    })
+    client = await _make_client(
+        {
+            "error_code": 400,
+            "error_message": "Bad Request: series_id is required",
+        }
+    )
     with pytest.raises(FredError, match="series_id is required"):
         await client.get_series("INVALID")
     await client.close()

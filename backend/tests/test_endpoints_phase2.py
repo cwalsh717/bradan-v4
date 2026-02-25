@@ -65,8 +65,10 @@ def _make_session_with_side_effects(side_effects):
 
 def _session_override(mock_db):
     """Return an async generator factory suitable for dependency_overrides."""
+
     async def _override():
         yield mock_db
+
     return _override
 
 
@@ -81,10 +83,12 @@ async def test_profile_cached_stock():
 
     # Call 1: stock lookup -> returns stock
     # Call 2: _next_refresh_for_stock earnings query -> no upcoming earnings
-    mock_db = _make_session_with_side_effects([
-        _scalar_one_or_none_result(stock),   # stock lookup
-        _scalar_one_or_none_result(None),    # earnings calendar query
-    ])
+    mock_db = _make_session_with_side_effects(
+        [
+            _scalar_one_or_none_result(stock),  # stock lookup
+            _scalar_one_or_none_result(None),  # earnings calendar query
+        ]
+    )
 
     app.dependency_overrides[get_session] = _session_override(mock_db)
     app.dependency_overrides[get_twelvedata] = lambda: AsyncMock()
@@ -117,10 +121,12 @@ async def test_profile_uncached_triggers_fetch():
     # Call 1: stock lookup -> None (not cached)
     # After fetch_full_profile runs, the endpoint uses the returned stock.
     # Call 2: _next_refresh_for_stock earnings query -> None
-    mock_db = _make_session_with_side_effects([
-        _scalar_one_or_none_result(None),    # stock lookup -> miss
-        _scalar_one_or_none_result(None),    # earnings calendar query
-    ])
+    mock_db = _make_session_with_side_effects(
+        [
+            _scalar_one_or_none_result(None),  # stock lookup -> miss
+            _scalar_one_or_none_result(None),  # earnings calendar query
+        ]
+    )
 
     mock_td = AsyncMock()
 
@@ -128,9 +134,7 @@ async def test_profile_uncached_triggers_fetch():
     app.dependency_overrides[get_twelvedata] = lambda: mock_td
 
     try:
-        with patch(
-            "app.routers.stocks.StockDataService"
-        ) as MockSvc:
+        with patch("app.routers.stocks.StockDataService") as MockSvc:
             mock_instance = AsyncMock()
             mock_instance.fetch_full_profile = AsyncMock(return_value=fetched_stock)
             MockSvc.return_value = mock_instance
@@ -169,11 +173,13 @@ async def test_financials_annual():
     # Call 1: _get_stock_or_404 -> stock
     # Call 2: select FinancialStatement -> list of statements
     # Call 3: _next_refresh_for_stock earnings -> None
-    mock_db = _make_session_with_side_effects([
-        _scalar_one_or_none_result(stock),
-        _scalars_all_result([stmt1]),
-        _scalar_one_or_none_result(None),
-    ])
+    mock_db = _make_session_with_side_effects(
+        [
+            _scalar_one_or_none_result(stock),
+            _scalars_all_result([stmt1]),
+            _scalar_one_or_none_result(None),
+        ]
+    )
 
     app.dependency_overrides[get_session] = _session_override(mock_db)
 
@@ -210,10 +216,12 @@ async def test_financials_ttm():
     # Call 1: _get_stock_or_404 -> stock
     # Then TTMService.compute_ttm is called (uses its own session.execute calls).
     # Call 2 (earnings calendar): _next_refresh_for_stock -> None
-    mock_db = _make_session_with_side_effects([
-        _scalar_one_or_none_result(stock),   # stock lookup
-        _scalar_one_or_none_result(None),    # earnings calendar
-    ])
+    mock_db = _make_session_with_side_effects(
+        [
+            _scalar_one_or_none_result(stock),  # stock lookup
+            _scalar_one_or_none_result(None),  # earnings calendar
+        ]
+    )
 
     app.dependency_overrides[get_session] = _session_override(mock_db)
 
@@ -256,9 +264,11 @@ async def test_financials_invalid_period():
 
 async def test_financials_stock_not_found():
     """When the stock does not exist, financials returns 404."""
-    mock_db = _make_session_with_side_effects([
-        _scalar_one_or_none_result(None),  # stock lookup -> miss
-    ])
+    mock_db = _make_session_with_side_effects(
+        [
+            _scalar_one_or_none_result(None),  # stock lookup -> miss
+        ]
+    )
 
     app.dependency_overrides[get_session] = _session_override(mock_db)
 
@@ -296,11 +306,13 @@ async def test_price_history():
     # Call 1: _get_stock_or_404 -> stock
     # Call 2: select PriceHistory -> rows
     # Call 3: _next_refresh_for_stock earnings -> None
-    mock_db = _make_session_with_side_effects([
-        _scalar_one_or_none_result(stock),
-        _scalars_all_result([row]),
-        _scalar_one_or_none_result(None),
-    ])
+    mock_db = _make_session_with_side_effects(
+        [
+            _scalar_one_or_none_result(stock),
+            _scalars_all_result([row]),
+            _scalar_one_or_none_result(None),
+        ]
+    )
 
     app.dependency_overrides[get_session] = _session_override(mock_db)
 
@@ -338,11 +350,13 @@ async def test_dividends():
     # Call 1: _get_stock_or_404 -> stock
     # Call 2: select Dividend -> rows
     # Call 3: _next_refresh_for_stock earnings -> None
-    mock_db = _make_session_with_side_effects([
-        _scalar_one_or_none_result(stock),
-        _scalars_all_result([div]),
-        _scalar_one_or_none_result(None),
-    ])
+    mock_db = _make_session_with_side_effects(
+        [
+            _scalar_one_or_none_result(stock),
+            _scalars_all_result([div]),
+            _scalar_one_or_none_result(None),
+        ]
+    )
 
     app.dependency_overrides[get_session] = _session_override(mock_db)
 
@@ -379,11 +393,13 @@ async def test_splits():
     # Call 1: _get_stock_or_404 -> stock
     # Call 2: select StockSplit -> rows
     # Call 3: _next_refresh_for_stock earnings -> None
-    mock_db = _make_session_with_side_effects([
-        _scalar_one_or_none_result(stock),
-        _scalars_all_result([split]),
-        _scalar_one_or_none_result(None),
-    ])
+    mock_db = _make_session_with_side_effects(
+        [
+            _scalar_one_or_none_result(stock),
+            _scalars_all_result([split]),
+            _scalar_one_or_none_result(None),
+        ]
+    )
 
     app.dependency_overrides[get_session] = _session_override(mock_db)
 
@@ -419,10 +435,12 @@ async def test_risk_free_rate_available():
     try:
         with patch("app.routers.utility.FredDataService") as MockFredSvc:
             mock_svc = AsyncMock()
-            mock_svc.get_latest_value = AsyncMock(return_value={
-                "date": "2025-05-30",
-                "value": 4.28,
-            })
+            mock_svc.get_latest_value = AsyncMock(
+                return_value={
+                    "date": "2025-05-30",
+                    "value": 4.28,
+                }
+            )
             MockFredSvc.return_value = mock_svc
 
             transport = ASGITransport(app=app)

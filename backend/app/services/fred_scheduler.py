@@ -54,9 +54,7 @@ class FredScheduler:
             try:
                 service = FredDataService(self.client, session)
                 results = await service.fetch_daily_update()
-                logger.info(
-                    "FRED scheduler: fetch_daily_update returned %s", results
-                )
+                logger.info("FRED scheduler: fetch_daily_update returned %s", results)
 
                 now = datetime.now(timezone.utc)
 
@@ -69,9 +67,7 @@ class FredScheduler:
                             "updated_at": now,
                         }
                     else:
-                        logger.warning(
-                            "FRED scheduler: no data for %s", series_id
-                        )
+                        logger.warning("FRED scheduler: no data for %s", series_id)
 
                 self._compute_spread(now)
                 logger.info(
@@ -125,8 +121,7 @@ class FredScheduler:
                 raise
             except Exception:
                 logger.exception(
-                    "FRED scheduler: error in background loop, "
-                    "will retry next cycle"
+                    "FRED scheduler: error in background loop, will retry next cycle"
                 )
 
     def stop(self) -> None:

@@ -1,0 +1,26 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "EditTool",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd backend && ruff format $CLAUDE_FILE_PATHS 2>&1 && ruff check $CLAUDE_FILE_PATHS --fix 2>&1"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "BashTool",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_TOOL_INPUT\" | grep -q 'git commit'; then cd backend && pytest tests/ -x --tb=line -q 2>&1; fi"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,94 +1,29 @@
-# CLAUDE.md — Bradán v4 Project Context
+# Bradán v4
 
-## Who You Are
-You are working on Bradán v4, a stock research and DCF valuation tool. You work within the constraints defined in `bradan_v4_spec.md` which is the single source of truth for this project. If you are unsure about an architectural decision, check the spec before making a judgment call.
+## What This Is
+Stock research and DCF valuation tool. FastAPI backend, Next.js frontend, PostgreSQL on Railway.
 
-## Subagents
-You have three specialist subagents in `.claude/agents/`. Use them:
-- **backend** — for all backend implementation (FastAPI, DB, API clients, DCF engine)
-- **frontend** — for all frontend implementation (Next.js, React, Clerk, UI)
-- **pm** — invoke BEFORE starting any new phase. Enforces spec compliance, testing standards, build order, and quality gates. No code ships without PM approval.
+## Source of Truth
+Read `bradan_v4_spec.md` for all schema, endpoints, formulas, and build order. Do not deviate from it.
 
-**Rule: Always invoke the PM agent at the start of a new phase or sub-phase to confirm scope and testing requirements.**
+## Commands
+- Dev server: `cd backend && uvicorn app.main:app --reload`
+- Tests: `cd backend && pytest tests/ -v`
+- Single test: `cd backend && pytest tests/test_file.py -k test_name`
+- Lint: `cd backend && ruff check .`
+- Format: `cd backend && ruff format .`
+- Migrations: `cd backend && alembic upgrade head`
 
-## Project State
-- **Current phase:** Phase 2 (Data Layer)
-- **What's done:** Phase 1 complete — FastAPI skeleton, 19 tables + migrations, Twelve Data client (9 methods), FRED client (2 methods), stock search endpoint, 33 tests passing
-- **What's next:** Phase 2 — data fetching/caching pipelines, TTM computation, FRED daily storage
+## Rules
+- IMPORTANT: Run `pytest` before any commit. No untested code ships.
+- IMPORTANT: Mock all external APIs (Twelve Data, FRED) in tests. Never hit real APIs.
+- Compute don't store: ratios, TTM, weekly/monthly candles, P&L are computed on the fly.
+- All live pricing via websocket. No REST polling for prices.
+- Use plan mode for any task with more than one moving part.
+- For multi-file tasks, use sub-agents to keep the main context window clean.
 
-Update this section as phases complete.
-
-## Tech Stack
-- **Backend:** FastAPI (Python 3.11+), async throughout
-- **Database:** PostgreSQL on Railway (separate service), SQLAlchemy 2.0 async + asyncpg
-- **Migrations:** Alembic
-- **Auth:** Clerk (JWT verification on protected endpoints)
-- **External APIs:** Twelve Data Pro tier (REST + WebSocket), FRED API
-- **Hosting:** Railway (3 services: backend, database, frontend)
-
-## Core Principles — Follow These Always
-
-### 1. Compute Don't Store
-Never store derived data. Ratios, TTM financials, weekly/monthly candles, P&L — all computed on the fly from raw data. Only store: daily candles, financial statements, FRED values, Damodaran reference data.
-
-### 2. Single Source of Truth
-Financial statements (JSONB) are the one source for all financial metrics. The DCF engine and the stock profile page both derive from the same data. No duplicate storage that can drift.
-
-### 3. Credit Conservation
-Twelve Data Pro tier: 610 API credits/minute, 1,500 WebSocket symbols. Every external API call costs credits. Cache aggressively. Never fetch what you already have. Price history is append-only — only fetch the gap since last stored date.
-
-### 4. Websocket for All Live Pricing
-No REST API calls for current quotes. Dashboard tickers (~28 symbols) are always subscribed. Stock profile prices are dynamically subscribed/unsubscribed. All held in-memory, never written to the database.
-
-### 5. Earnings-Driven Cache Invalidation
-Financial statements do NOT expire on a fixed timer. They refresh when a known earnings date passes (from the earnings_calendar table). This ensures TTM is always based on the most recent available quarters.
-
-### 6. Audience is 4/10 Finance Literacy
-API responses should include both technical field names and metadata that supports plain-language display. The glossary table maps technical terms to plain English. The frontend handles presentation, but the backend should make it easy.
-
-## Database Schema
-19 tables across 4 domains + shared. Full definitions in `bradan_v4_spec.md`. Key things to remember:
-- `financial_statements.data` is JSONB — flexible structure per company
-- `dcf_valuations.inputs` and `.outputs` are JSONB — model can evolve without migrations
-- `price_history` stores daily candles only — weekly/monthly computed on the fly
-- `fred_series` stores history (append), not just latest value
-- No `stock_quotes` table — live pricing is websocket/in-memory only
-
-## API Response Envelope
-All cached data endpoints must include freshness metadata:
-```json
-{
-  "data": { ... },
-  "data_as_of": "2025-10-15T00:00:00Z",
-  "next_refresh": "2026-01-24T00:00:00Z"
-}
-```
-
-## Testing — Non-Negotiable
-- **Every phase must include tests.** No untested code ships.
-- pytest + pytest-asyncio + httpx AsyncClient
-- Mock external APIs (Twelve Data, FRED) — never hit real APIs in tests
-- Test both success and error paths
-- The PM agent enforces this. If a prompt doesn't include tests, add them.
-
-## Error Handling
-- DCF eligibility: check at request time by querying financial_statements — no stored status
-- Partial fetch failures: serve what's available, retry missing data on next request
-- External API down: serve cached data with stale indicator
-- Sector mapping confidence <60%: block DCF, return clear error message
-
-## Git Discipline
-- Commit after every meaningful change with a descriptive message
-- Push to GitHub after completing each sub-phase
-- Good commit message format: "Phase Xx: brief description of what changed"
-- Never commit .env files or API keys
-- Always commit and push before ending a session
-
-## What NOT To Do
-- Do not deviate from the spec without flagging it explicitly
-- Do not add tables, endpoints, or dependencies not in the spec
-- Do not store computed/derived data
-- Do not use REST calls for live pricing
-- Do not hardcode API keys or connection strings
-- Do not skip writing tests — every module and endpoint must have tests before a phase is complete
-- Do not make frontend decisions — that's a separate agent
+## Structure
+- `backend/` — FastAPI app, services, models, tests
+- `frontend/` — Next.js app (Phase 5+)
+- `.claude/agents/` — sub-agent definitions
+- `.claude/commands/` — slash commands for workflow
