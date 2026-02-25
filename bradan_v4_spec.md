@@ -614,5 +614,12 @@ Three subagents in `.claude/agents/`:
 - [x] Phase 6h: Stock profile page (6 parallel data fetches + WS /api/stocks/{symbol}/stream, PriceChart via Recharts AreaChart, tabbed layout: Financials/Ratios/Dividends, FinancialsTable, RatiosGrid with GlossaryTooltip, PeerList with links)
 - [x] Phase 6i: DCF page with progressive disclosure (3 levels: Headline → Overview → Full Model; Headline: value vs price, upside/downside, verdict badge; AssumptionCards with GlossaryTooltip; ScenarioSelector 3 presets; EquityBridge waterfall; ProjectionTable year-by-year; SensitivityTable heatmap green/red; CSV export link)
 - [x] Phase 6j: Phase 6 test suite (108 new tests — 24 backend: ratios unit+endpoint, peers, glossary seed+endpoint; 84 frontend: format 35, SearchBar 5, GlossaryTooltip 7, dashboard 5, stock-profile 9, DCF 16, existing pages updated 7; 338 total: 238 backend + 100 frontend)
-- [ ] Phase 7: Portfolio
+- [x] Phase 7a: Backend Clerk JWT auth (auth.py — get_current_user dependency, HS256 JWT decode, DB user lookup; CLERK_SECRET_KEY config; pyjwt[crypto] dependency)
+- [x] Phase 7b: Backend auth sync endpoint (POST /api/auth/sync — upsert local user from Clerk JWT, extract clerk_id/email/display_name from claims)
+- [x] Phase 7c: Backend portfolio schemas (7 Pydantic models — PortfolioCreate/Update, HoldingCreate, PortfolioResponse, HoldingResponse, PerformanceSummary, SnapshotResponse; mode validator watchlist/full)
+- [x] Phase 7d: Backend portfolio service (PortfolioService — 11 methods: list/create/get/update/delete portfolios, list/add/remove holdings with live WS prices, get_performance on-the-fly P&L, get_history/create_snapshot; ownership enforcement, IntegrityError→409)
+- [x] Phase 7e: Backend portfolio router (9 auth-gated endpoints: GET/POST/PATCH/DELETE portfolios, GET/POST/DELETE holdings, GET performance, GET history; holdings count via grouped COUNT query)
+- [x] Phase 7f: Frontend portfolio types + auth fetch (Portfolio/Holding/PerformanceSummary/PortfolioSnapshot types; authFetch with Bearer token for non-envelope endpoints; useAuthSync hook)
+- [x] Phase 7g: Frontend portfolio pages (list page: create/delete/list portfolios; detail page /portfolio/[id]: performance summary cards in full mode, holdings table with symbol links, add/remove holdings; portfolio layout with auth sync)
+- [x] Phase 7h: Phase 7 test suite (36 new tests — 26 backend: 5 auth sync + 21 portfolio endpoints/CRUD/holdings/performance/history/auth-guard/ownership; 10 frontend: list page 5 + detail page 5; 374 total: 264 backend + 110 frontend)
 - [ ] Phase 8: Polish
