@@ -579,7 +579,13 @@ Three subagents in `.claude/agents/`:
 - [x] Phase 2d: Stock profile REST endpoints (5 endpoints: profile, financials with annual/quarterly/ttm, price-history, dividends, splits; response envelope; auto-fetch on uncached stock; earnings-driven next_refresh)
 - [x] Phase 2e: FRED rate endpoint (GET /api/rates/risk-free — DGS10 from fred_series, 503 on missing data)
 - [x] Phase 2f: Phase 2 test suite (69 new tests, 102 total; Pydantic schemas fixed for Python 3.9 compatibility)
-- [ ] Phase 3: Dashboard
+- [x] Phase 3a: Seed dashboard_tickers table (27 tickers across 8 categories, idempotent check-then-insert/update)
+- [x] Phase 3b: Twelve Data WebSocket manager (persistent upstream connection, in-memory price dict, subscribe/unsubscribe, auto-reconnect with exponential backoff, 30s cleanup loop for stale profile symbols)
+- [x] Phase 3c: FRED daily scheduler (FredScheduler — daily fetch + in-memory cache, computed SPREAD_2S10S = DGS10 - DGS2)
+- [x] Phase 3d: Dashboard endpoints (GET /api/dashboard/config with category grouping, WS /api/dashboard/stream fan-out from ws_manager + fred_scheduler)
+- [x] Phase 3e: Stock profile WebSocket (WS /api/stocks/{symbol}/stream — dynamic subscribe, 30s heartbeat, 60s TTL cleanup)
+- [x] Phase 3f: App lifecycle wiring (startup: seed tickers, start ws_manager + subscribe dashboard symbols, start fred_scheduler; shutdown: stop all)
+- [x] Phase 3g: Phase 3 test suite (20 new tests, 122 total; websockets.asyncio type annotation fixed for Python 3.9)
 - [ ] Phase 4: DCF engine
 - [ ] Phase 5: Frontend shell
 - [ ] Phase 6: Frontend pages

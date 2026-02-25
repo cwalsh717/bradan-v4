@@ -1,11 +1,14 @@
-"""Stock profile REST endpoints."""
+"""Stock profile REST and WebSocket endpoints."""
 
+import asyncio
 from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+import app.dependencies as deps
 
 from app.database import get_session
 from app.dependencies import get_twelvedata
@@ -248,3 +251,54 @@ async def get_splits(
     next_refresh = await _next_refresh_for_stock(stock, data_as_of, session)
 
     return _envelope(data=records, data_as_of=data_as_of, next_refresh=next_refresh)
+
+
+# ------------------------------------------------------------------
+# WS /api/stocks/{symbol}/stream
+# ------------------------------------------------------------------
+
+_HEARTBEAT_TIMEOUT_S = 30.0
+_PRICE_INTERVAL_S = 1.0
+
+
+@router.websocket("/{symbol}/stream")
+async def stock_price_stream(websocket: WebSocket, symbol: str):
+    """Stream live price updates for a single stock.
+
+    The client must send a heartbeat message (any content) at least every
+    30 seconds.  If no heartbeat arrives in time the server sends a ping
+    and continues — the upstream 60-second TTL in the ws_manager handles
+    final cleanup.
+    """
+    symbol = symbol.upper()
+    ws_manager = deps.ws_manager
+
+    await websocket.accept()
+    await ws_manager.register_profile_listener(symbol)
+
+    try:
+        while True:
+            # Send the latest price snapshot (may be None if not yet received)
+            price = ws_manager.get_price(symbol)
+            if price is not None:
+                await websocket.send_json(price)
+
+            # Wait for a client heartbeat with a 30-second timeout
+            try:
+                await asyncio.wait_for(
+                    websocket.receive_text(),
+                    timeout=_HEARTBEAT_TIMEOUT_S,
+                )
+                ws_manager.heartbeat_profile(symbol)
+            except asyncio.TimeoutError:
+                # No heartbeat within 30s — send a ping and keep going
+                await websocket.send_json({"type": "ping"})
+            except WebSocketDisconnect:
+                break
+
+            # Pace the loop so we send price roughly every second
+            await asyncio.sleep(_PRICE_INTERVAL_S)
+    except WebSocketDisconnect:
+        pass
+    finally:
+        await ws_manager.unregister_profile_listener(symbol)
