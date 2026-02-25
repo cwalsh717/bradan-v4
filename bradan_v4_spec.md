@@ -573,7 +573,12 @@ Three subagents in `.claude/agents/`:
 - [x] Phase 1a: Project skeleton (FastAPI, folder structure, health check, Dockerfile)
 - [x] Phase 1b: Database models and Alembic migration (19 tables)
 - [x] Phase 1c: API clients (Twelve Data 9 methods, FRED 2 methods), search endpoint, full Phase 1 test suite (33 tests)
-- [ ] Phase 2: Data layer
+- [x] Phase 2a: Stock data pipeline service (StockDataService — fetch + upsert profile, financials, price history, dividends, splits, earnings calendar; append-only price history; partial failure resilience)
+- [x] Phase 2b: FRED data service (FredDataService — fetch/upsert 4 tracked series, daily incremental update, 1-year backfill)
+- [x] Phase 2c: TTM computation module (TTMService — sum 4 quarterly income/cash_flow, latest quarter balance sheet, graceful degradation)
+- [x] Phase 2d: Stock profile REST endpoints (5 endpoints: profile, financials with annual/quarterly/ttm, price-history, dividends, splits; response envelope; auto-fetch on uncached stock; earnings-driven next_refresh)
+- [x] Phase 2e: FRED rate endpoint (GET /api/rates/risk-free — DGS10 from fred_series, 503 on missing data)
+- [x] Phase 2f: Phase 2 test suite (69 new tests, 102 total; Pydantic schemas fixed for Python 3.9 compatibility)
 - [ ] Phase 3: Dashboard
 - [ ] Phase 4: DCF engine
 - [ ] Phase 5: Frontend shell

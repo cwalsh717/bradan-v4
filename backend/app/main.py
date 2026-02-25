@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 
 from app.config import settings
 from app.exceptions import FredError, TwelveDataError
-from app.routers import utility
+from app.routers import stocks, utility
 from app.services.fred import FredClient
 from app.services.twelvedata import TwelveDataClient
 import app.dependencies as deps
@@ -42,3 +42,4 @@ async def fred_error_handler(request: Request, exc: FredError):
 
 
 app.include_router(utility.router)
+app.include_router(stocks.router)

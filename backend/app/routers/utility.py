@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta, timezone
+
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
@@ -5,7 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.database import engine, get_session
-from app.dependencies import get_twelvedata
+from app.dependencies import get_fred, get_twelvedata
+from app.services.fred import FredClient
+from app.services.fred_data import FredDataService
 from app.services.search import SearchService
 from app.services.twelvedata import TwelveDataClient
 
@@ -49,3 +53,31 @@ async def search_stocks(
     service = SearchService(twelvedata)
     results = await service.search(q, db)
     return {"results": results}
+
+
+@router.get("/api/rates/risk-free")
+async def get_risk_free_rate(
+    db: AsyncSession = Depends(get_session),
+    fred: FredClient = Depends(get_fred),
+):
+    service = FredDataService(client=fred, session=db)
+    result = await service.get_latest_value("DGS10")
+
+    if result is None:
+        return JSONResponse(
+            status_code=503,
+            content={"message": "FRED data not available"},
+        )
+
+    now = datetime.now(timezone.utc)
+    next_day = now + timedelta(days=1)
+
+    return {
+        "data": {
+            "series_id": "DGS10",
+            "value": result["value"],
+            "date": result["date"],
+        },
+        "data_as_of": now.isoformat(),
+        "next_refresh": next_day.isoformat(),
+    }
