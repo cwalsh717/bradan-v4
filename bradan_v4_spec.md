@@ -520,3 +520,56 @@ Manual script run before launch:
 - Data freshness indicators
 - Rate limit monitoring
 - Final QA pass
+
+---
+
+## Testing Standards
+
+- **Every phase must include tests.** No untested code ships.
+- **Test stack:** pytest + pytest-asyncio + httpx AsyncClient + pytest-cov
+- Mock all external APIs (Twelve Data, FRED) — never hit real APIs in test suite
+- Test both success and error paths
+- Unit tests for all service modules and computation logic
+- Integration tests for all API endpoints
+- The PM subagent enforces this on every phase
+
+---
+
+## Project Infrastructure
+
+### Repository
+- Private GitHub repo: `bradan-v4`
+- Monorepo: backend/ and frontend/ in same repo
+- `CLAUDE.md` in repo root — auto-read by Claude Code every session
+- `bradan_v4_spec.md` in repo root — single source of truth
+
+### Subagents (Claude Code)
+Three subagents in `.claude/agents/`:
+- `backend.md` — backend implementation specialist
+- `frontend.md` — frontend implementation specialist
+- `pm.md` — enforces spec compliance, testing, build order, quality gates
+
+### Development Workflow
+1. Plan in main assistant (claude.ai project) → generate prompt
+2. Feed prompt to Claude Code → it builds, referencing CLAUDE.md and spec
+3. Commit and push after each sub-phase
+4. Debrief in main assistant → update spec + CLAUDE.md if needed
+5. Download updated files, commit to repo, repeat
+
+### Future Tooling (Planned, Not Implemented)
+- **Puppeteer** — Phase 5+: end-to-end frontend testing and DCF valuation PDF export rendering
+
+---
+
+## Completion Log
+
+- [x] Phase 1a: Project skeleton (FastAPI, folder structure, health check, Dockerfile)
+- [x] Phase 1b: Database models and Alembic migration (19 tables)
+- [x] Phase 1c: API clients (Twelve Data 9 methods, FRED 2 methods), search endpoint, full Phase 1 test suite (33 tests)
+- [ ] Phase 2: Data layer
+- [ ] Phase 3: Dashboard
+- [ ] Phase 4: DCF engine
+- [ ] Phase 5: Frontend shell
+- [ ] Phase 6: Frontend pages
+- [ ] Phase 7: Portfolio
+- [ ] Phase 8: Polish

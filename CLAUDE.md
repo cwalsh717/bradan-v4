@@ -12,9 +12,9 @@ You have three specialist subagents in `.claude/agents/`. Use them:
 **Rule: Always invoke the PM agent at the start of a new phase or sub-phase to confirm scope and testing requirements.**
 
 ## Project State
-- **Current phase:** Phase 1 (Foundation) — completing sub-phases
-- **What's done:** Phase 1a (skeleton), Phase 1b (19 tables + migrations)
-- **What's next:** Phase 1c (API clients, search), then Phase 1d (tests for all Phase 1 code)
+- **Current phase:** Phase 2 (Data Layer)
+- **What's done:** Phase 1 complete — FastAPI skeleton, 19 tables + migrations, Twelve Data client (9 methods), FRED client (2 methods), stock search endpoint, 33 tests passing
+- **What's next:** Phase 2 — data fetching/caching pipelines, TTM computation, FRED daily storage
 
 Update this section as phases complete.
 
