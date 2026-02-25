@@ -199,3 +199,44 @@ export interface StockSplit {
   ratio_from: number;
   ratio_to: number;
 }
+
+// Portfolio
+export interface Portfolio {
+  id: number;
+  name: string;
+  mode: "watchlist" | "full";
+  created_at: string;
+  updated_at: string | null;
+  holdings_count: number;
+}
+
+export interface Holding {
+  id: number;
+  stock_id: number;
+  symbol: string;
+  name: string;
+  shares: number | null;
+  cost_basis_per_share: number | null;
+  added_at: string;
+  current_price: number | null;
+  market_value: number | null;
+  gain_loss: number | null;
+  gain_loss_pct: number | null;
+}
+
+export interface PerformanceSummary {
+  total_value: number;
+  total_cost_basis: number;
+  total_gain_loss: number;
+  total_gain_loss_pct: number | null;
+  holdings: Holding[];
+}
+
+export interface PortfolioSnapshot {
+  id: number;
+  date: string;
+  total_value: number;
+  total_cost_basis: number;
+  total_gain_loss: number;
+  holdings_snapshot: Record<string, any>;
+}

@@ -8,7 +8,7 @@ from app.config import settings
 from app.database import async_session
 from app.exceptions import FredError, TwelveDataError
 from app.models.dashboard import DashboardTicker
-from app.routers import dashboard, dcf, stocks, utility
+from app.routers import auth, dashboard, dcf, portfolio, stocks, utility
 from app.services.fred import FredClient
 from app.services.fred_scheduler import FredScheduler
 from app.services.damodaran_seed import seed_damodaran_data
@@ -92,3 +92,5 @@ app.include_router(utility.router)
 app.include_router(stocks.router)
 app.include_router(dashboard.router)
 app.include_router(dcf.router)
+app.include_router(auth.router)
+app.include_router(portfolio.router)

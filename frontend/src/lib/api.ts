@@ -52,3 +52,31 @@ export async function apiGet<T>(path: string): Promise<T> {
   const envelope = await apiFetch<T>(path);
   return envelope.data;
 }
+
+/**
+ * Authenticated fetch — sends Bearer token, returns raw JSON (not envelope-wrapped).
+ * Used for portfolio endpoints which don't use the data/data_as_of/next_refresh envelope.
+ */
+export async function authFetch<T>(
+  path: string,
+  token: string,
+  options?: RequestInit,
+): Promise<T> {
+  const url = `${API_BASE}${path}`;
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+    ...options?.headers,
+  };
+  const response = await fetch(url, { ...options, headers });
+  if (!response.ok) {
+    let detail = response.statusText;
+    try {
+      const body = await response.json();
+      if (body.detail) detail = body.detail;
+    } catch { /* keep statusText */ }
+    throw new ApiError(response.status, detail);
+  }
+  if (response.status === 204) return undefined as T;
+  return (await response.json()) as T;
+}

@@ -5,10 +5,24 @@ import { render, screen, act, waitFor } from "@testing-library/react";
 vi.mock("@/lib/api", () => ({
   apiGet: vi.fn().mockResolvedValue({ categories: [] }),
   apiFetch: vi.fn().mockResolvedValue({ data: null, data_as_of: "", next_refresh: null }),
+  authFetch: vi.fn().mockResolvedValue([]),
 }));
 
 vi.mock("@/lib/ws", () => ({
   useWebSocket: () => ({ data: null, isConnected: false }),
+}));
+
+vi.mock("@clerk/nextjs", () => ({
+  useAuth: () => ({ getToken: vi.fn().mockResolvedValue("test-token"), isSignedIn: true }),
+  ClerkProvider: ({ children }: { children: React.ReactNode }) => children,
+  SignedIn: ({ children }: { children: React.ReactNode }) => children,
+  SignedOut: () => null,
+  SignInButton: () => null,
+  UserButton: () => null,
+}));
+
+vi.mock("@/lib/useAuthSync", () => ({
+  useAuthSync: vi.fn(),
 }));
 
 import DashboardPage from "@/app/page";
