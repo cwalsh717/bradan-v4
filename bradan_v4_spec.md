@@ -22,6 +22,8 @@ Bradán v4 is a stock research and valuation tool built as a portfolio project. 
 | Market Data | Twelve Data Pro tier ($230/mo) | Websockets (1,500 symbols), full financial statements, max history |
 | Economic Data | FRED API | Risk-free rates, treasury yields, credit spreads |
 | Valuation Framework | Damodaran (NYU) | 6 static reference datasets, updated annually |
+| Charting | Recharts | React-native, composable, works with SSR/client components |
+| Frontend Testing | Vitest + React Testing Library | Fast, ESM-native, jsdom environment |
 
 ---
 
@@ -280,7 +282,7 @@ glossary
 ├── learn_more_url (text, nullable)
 ```
 
-**Glossary Delivery:** Stored in DB as source of truth. Served as static build asset in Next.js (fetched at build time, bundled as JSON). Updated on redeploy.
+**Glossary Delivery:** Stored in DB as source of truth. Served via GET /api/glossary endpoint. Frontend also bundles a client-side glossary lookup (26 entries in `frontend/src/lib/glossary.ts`) used by the GlossaryTooltip component for instant hover tooltips without network requests. DB remains canonical; client-side entries are a performance optimization.
 
 ---
 
@@ -317,7 +319,7 @@ glossary
 
 ---
 
-## API Endpoints (~31)
+## API Endpoints (~32)
 
 ### Dashboard
 ```
@@ -370,6 +372,7 @@ GET  /api/portfolios/{id}/history           — Auth: portfolio value over time 
 ```
 GET  /api/search?q={query}     — Stock search (local DB first, Twelve Data fallback)
 GET  /api/rates/risk-free      — Current 10-year Treasury from fred_series
+GET  /api/glossary             — All glossary entries ordered by category and term
 GET  /api/health               — System status: DB, WS, FRED, cache staleness
 GET  /api/system/rate-status   — Twelve Data credit usage monitoring
 ```
@@ -595,7 +598,21 @@ Three subagents in `.claude/agents/`:
 - [x] Phase 4f: DCF router (11 endpoints: constraints, default, compute, save, runs CRUD, sector-context, sensitivity, summary, CSV export; auth via X-User-Id header)
 - [x] Phase 4g: App lifecycle wiring (Damodaran seed on startup, DCF router included)
 - [x] Phase 4h: Phase 4 test suite (92 new tests — 60 engine + 32 service/endpoint/seed/mapping, 214 total)
-- [ ] Phase 5: Frontend shell
-- [ ] Phase 6: Frontend pages
+- [x] Phase 5a: Next.js project setup (App Router, TypeScript, Tailwind CSS v4, eslint, project structure under frontend/)
+- [x] Phase 5b: Clerk auth integration (ClerkProvider, SignIn/SignUp pages, middleware route protection, auth-gated /portfolio route)
+- [x] Phase 5c: Page routing and layouts (RootLayout with Header, dashboard /, stock profile /stocks/[symbol], DCF /dcf/[symbol], portfolio /portfolio, sign-in/sign-up)
+- [x] Phase 5d: API client module (apiGet/apiFetch with NEXT_PUBLIC_API_URL, response envelope unwrap, error handling)
+- [x] Phase 5e: WebSocket hook (useWebSocket — auto-connect/disconnect, reconnect with backoff, JSON parsing, connection state)
+- [x] Phase 5f: Phase 5 test suite (23 tests — Vitest + React Testing Library + jsdom; layout, header, pages, API client, WS hook)
+- [x] Phase 6a: Backend computed ratios service (compute_ratios — 17 ratios across 5 categories: profitability, liquidity, leverage, valuation, efficiency; pure function, graceful None handling)
+- [x] Phase 6b: Backend ratios + peers endpoints (GET /api/stocks/{symbol}/ratios — TTM-based on-the-fly computation; GET /api/stocks/{symbol}/peers — same Damodaran industry lookup)
+- [x] Phase 6c: Backend glossary seed (seed_glossary — 31 entries across 3 categories: dcf/ratios/profile; idempotent check-then-insert/update; GET /api/glossary endpoint)
+- [x] Phase 6d: Frontend formatting utilities (7 functions: formatCurrency, formatPercent, formatLargeNumber, formatChange, changeColor, formatDate, formatRatio; null-safe "—" fallback)
+- [x] Phase 6e: Frontend search bar (SearchBar — debounced 300ms, min 2 chars, apiGet /api/search, dropdown with keyboard nav, router.push on select; integrated into Header)
+- [x] Phase 6f: Frontend glossary tooltips (GlossaryTooltip — hover tooltip with display_label + plain-English tooltip, auto-positions above/below; 26 client-side entries + DB-backed API)
+- [x] Phase 6g: Dashboard page (live WS prices via /api/dashboard/stream, 8 category sections, TickerCard with format switching price/percentage, CategorySection grid, loading skeletons, disconnected banner)
+- [x] Phase 6h: Stock profile page (6 parallel data fetches + WS /api/stocks/{symbol}/stream, PriceChart via Recharts AreaChart, tabbed layout: Financials/Ratios/Dividends, FinancialsTable, RatiosGrid with GlossaryTooltip, PeerList with links)
+- [x] Phase 6i: DCF page with progressive disclosure (3 levels: Headline → Overview → Full Model; Headline: value vs price, upside/downside, verdict badge; AssumptionCards with GlossaryTooltip; ScenarioSelector 3 presets; EquityBridge waterfall; ProjectionTable year-by-year; SensitivityTable heatmap green/red; CSV export link)
+- [x] Phase 6j: Phase 6 test suite (108 new tests — 24 backend: ratios unit+endpoint, peers, glossary seed+endpoint; 84 frontend: format 35, SearchBar 5, GlossaryTooltip 7, dashboard 5, stock-profile 9, DCF 16, existing pages updated 7; 338 total: 238 backend + 100 frontend)
 - [ ] Phase 7: Portfolio
 - [ ] Phase 8: Polish
