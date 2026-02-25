@@ -27,14 +27,17 @@ from app.models.stocks import (
     Stock,
     StockSplit,
 )
+from app.models.dcf import SectorMapping
 from app.schemas.stocks import (
     DividendRecord,
     FinancialRecord,
+    PeerRecord,
     PriceRecord,
     SplitRecord,
     StockEnvelope,
     StockProfile,
 )
+from app.services.ratios import compute_ratios
 from app.services.stock_data import StockDataService
 from app.services.ttm import TTMService
 from app.services.twelvedata import TwelveDataClient
@@ -254,6 +257,143 @@ async def get_splits(
     next_refresh = await _next_refresh_for_stock(stock, data_as_of, session)
 
     return _envelope(data=records, data_as_of=data_as_of, next_refresh=next_refresh)
+
+
+# ------------------------------------------------------------------
+# GET /api/stocks/{symbol}/ratios
+# ------------------------------------------------------------------
+
+
+@router.get("/{symbol}/ratios", response_model=StockEnvelope)
+async def get_ratios(
+    symbol: str,
+    session: AsyncSession = Depends(get_session),
+):
+    """Compute financial ratios on-the-fly from TTM financials.
+
+    Ratios are never stored — always computed from the latest data.
+    Valuation ratios (P/E, P/B, P/S, EV/EBITDA) require a current price;
+    they are returned as null when no price is available.
+    """
+    stock = await _get_stock_or_404(symbol, session)
+
+    # Get TTM data
+    ttm_svc = TTMService(session=session)
+    ttm_data = await ttm_svc.compute_ttm(stock.id)
+
+    if ttm_data is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No financial statements available to compute ratios for '{symbol}'",
+        )
+
+    # Try to get current price from latest price_history record
+    price_result = await session.execute(
+        select(PriceHistory.close)
+        .where(PriceHistory.stock_id == stock.id)
+        .order_by(PriceHistory.date.desc())
+        .limit(1)
+    )
+    current_price_row = price_result.scalar_one_or_none()
+    current_price = float(current_price_row) if current_price_row is not None else None
+
+    ratios = compute_ratios(ttm_data, current_price=current_price)
+
+    data_as_of = stock.last_updated
+    next_refresh = await _next_refresh_for_stock(stock, data_as_of, session)
+
+    return _envelope(data=ratios, data_as_of=data_as_of, next_refresh=next_refresh)
+
+
+# ------------------------------------------------------------------
+# GET /api/stocks/{symbol}/peers
+# ------------------------------------------------------------------
+
+
+@router.get("/{symbol}/peers", response_model=StockEnvelope)
+async def get_peers(
+    symbol: str,
+    session: AsyncSession = Depends(get_session),
+):
+    """Return stocks in the same Damodaran industry.
+
+    Looks up the stock's sector/industry mapping via SectorMapping,
+    finds other stocks mapped to the same damodaran_industry_id,
+    and returns up to 10 peers (excluding the queried stock).
+    Returns an empty list if no mapping or no peers are found.
+    """
+    stock = await _get_stock_or_404(symbol, session)
+
+    td_sector = stock.sector or ""
+    td_industry = stock.industry or ""
+
+    # Find the stock's sector mapping
+    mapping_result = await session.execute(
+        select(SectorMapping).where(
+            SectorMapping.twelvedata_sector == td_sector,
+            SectorMapping.twelvedata_industry == td_industry,
+        )
+    )
+    mapping = mapping_result.scalar_one_or_none()
+
+    if mapping is None or mapping.damodaran_industry_id is None:
+        data_as_of = stock.last_updated
+        next_refresh = await _next_refresh_for_stock(stock, data_as_of, session)
+        return _envelope(data=[], data_as_of=data_as_of, next_refresh=next_refresh)
+
+    # Find other stocks with the same Damodaran industry mapping
+    # Join stocks -> sector_mapping on (sector, industry) matching the same damodaran_industry_id
+    peer_mappings_result = await session.execute(
+        select(
+            SectorMapping.twelvedata_sector, SectorMapping.twelvedata_industry
+        ).where(
+            SectorMapping.damodaran_industry_id == mapping.damodaran_industry_id,
+        )
+    )
+    peer_mapping_rows = peer_mappings_result.all()
+
+    if not peer_mapping_rows:
+        data_as_of = stock.last_updated
+        next_refresh = await _next_refresh_for_stock(stock, data_as_of, session)
+        return _envelope(data=[], data_as_of=data_as_of, next_refresh=next_refresh)
+
+    # Build condition tuples for matching stocks
+    from sqlalchemy import or_, and_
+
+    conditions = [
+        and_(
+            Stock.sector == row.twelvedata_sector,
+            Stock.industry == row.twelvedata_industry,
+        )
+        for row in peer_mapping_rows
+    ]
+
+    peers_result = await session.execute(
+        select(Stock)
+        .where(
+            or_(*conditions),
+            Stock.symbol != stock.symbol,
+        )
+        .limit(10)
+    )
+    peers = peers_result.scalars().all()
+
+    peer_records = [
+        PeerRecord(
+            symbol=p.symbol,
+            name=p.name,
+            sector=p.sector,
+            industry=p.industry,
+        )
+        for p in peers
+    ]
+
+    data_as_of = stock.last_updated
+    next_refresh = await _next_refresh_for_stock(stock, data_as_of, session)
+
+    return _envelope(
+        data=peer_records, data_as_of=data_as_of, next_refresh=next_refresh
+    )
 
 
 # ------------------------------------------------------------------

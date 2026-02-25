@@ -2,12 +2,13 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
-from sqlalchemy import text
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.database import engine, get_session
 from app.dependencies import get_fred, get_twelvedata
+from app.models.shared import Glossary
 from app.services.fred import FredClient
 from app.services.fred_data import FredDataService
 from app.services.search import SearchService
@@ -80,4 +81,26 @@ async def get_risk_free_rate(
         },
         "data_as_of": now.isoformat(),
         "next_refresh": next_day.isoformat(),
+    }
+
+
+@router.get("/api/glossary")
+async def get_glossary(db: AsyncSession = Depends(get_session)):
+    """Return all glossary entries ordered by category and term."""
+    result = await db.execute(
+        select(Glossary).order_by(Glossary.category, Glossary.technical_term)
+    )
+    entries = result.scalars().all()
+    return {
+        "data": [
+            {
+                "technical_term": e.technical_term,
+                "display_label": e.display_label,
+                "technical_label": e.technical_label,
+                "tooltip": e.tooltip,
+                "category": e.category,
+                "learn_more_url": e.learn_more_url,
+            }
+            for e in entries
+        ]
     }

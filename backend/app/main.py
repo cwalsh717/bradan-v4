@@ -12,6 +12,7 @@ from app.routers import dashboard, dcf, stocks, utility
 from app.services.fred import FredClient
 from app.services.fred_scheduler import FredScheduler
 from app.services.damodaran_seed import seed_damodaran_data
+from app.services.glossary_service import seed_glossary
 from app.services.seed import seed_dashboard_tickers
 from app.services.twelvedata import TwelveDataClient
 from app.services.ws_manager import TwelveDataWSManager
@@ -33,6 +34,8 @@ async def startup():
         await seed_dashboard_tickers(session)
     async with async_session() as session:
         await seed_damodaran_data(session)
+    async with async_session() as session:
+        await seed_glossary(session)
 
     # WebSocket manager — connect to Twelve Data and subscribe dashboard symbols
     deps.ws_manager = TwelveDataWSManager(settings.TWELVE_DATA_API_KEY)

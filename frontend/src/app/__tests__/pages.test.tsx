@@ -1,5 +1,15 @@
-import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { Suspense } from "react";
+import { describe, it, expect, vi } from "vitest";
+import { render, screen, act, waitFor } from "@testing-library/react";
+
+vi.mock("@/lib/api", () => ({
+  apiGet: vi.fn().mockResolvedValue({ categories: [] }),
+  apiFetch: vi.fn().mockResolvedValue({ data: null, data_as_of: "", next_refresh: null }),
+}));
+
+vi.mock("@/lib/ws", () => ({
+  useWebSocket: () => ({ data: null, isConnected: false }),
+}));
 
 import DashboardPage from "@/app/page";
 import PortfolioPage from "@/app/portfolio/page";
@@ -9,7 +19,7 @@ import DCFPage from "@/app/dcf/[symbol]/page";
 describe("DashboardPage", () => {
   it("renders heading", () => {
     render(<DashboardPage />);
-    expect(screen.getByText("Dashboard")).toBeInTheDocument();
+    expect(screen.getByText("Market Dashboard")).toBeInTheDocument();
   });
 });
 
@@ -22,21 +32,31 @@ describe("PortfolioPage", () => {
 
 describe("StockProfilePage", () => {
   it("renders with symbol", async () => {
-    const result = await StockProfilePage({
-      params: Promise.resolve({ symbol: "AAPL" }),
+    await act(async () => {
+      render(
+        <Suspense fallback={<div>Loading...</div>}>
+          <StockProfilePage params={Promise.resolve({ symbol: "AAPL" })} />
+        </Suspense>,
+      );
     });
-    render(result);
-    expect(screen.getByText("AAPL")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getAllByText("AAPL").length).toBeGreaterThanOrEqual(1);
+    });
   });
 });
 
 describe("DCFPage", () => {
   it("renders with symbol", async () => {
-    const result = await DCFPage({
-      params: Promise.resolve({ symbol: "MSFT" }),
+    await act(async () => {
+      render(
+        <Suspense fallback={<div>Loading...</div>}>
+          <DCFPage params={Promise.resolve({ symbol: "MSFT" })} />
+        </Suspense>,
+      );
     });
-    render(result);
-    expect(screen.getByText(/DCF/)).toBeInTheDocument();
-    expect(screen.getByText(/MSFT/)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText(/DCF/)).toBeInTheDocument();
+      expect(screen.getByText(/MSFT/)).toBeInTheDocument();
+    });
   });
 });

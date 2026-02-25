@@ -77,3 +77,39 @@ class SplitRecord(BaseModel):
     ratio_to: int
 
     model_config = {"from_attributes": True}
+
+
+class RatiosResponse(BaseModel):
+    """Flat dict of computed financial ratios."""
+
+    # Profitability
+    gross_margin: Optional[float] = None
+    operating_margin: Optional[float] = None
+    net_margin: Optional[float] = None
+    roe: Optional[float] = None
+    roa: Optional[float] = None
+    roic: Optional[float] = None
+    # Liquidity
+    current_ratio: Optional[float] = None
+    quick_ratio: Optional[float] = None
+    # Leverage
+    debt_to_equity: Optional[float] = None
+    debt_to_assets: Optional[float] = None
+    interest_coverage: Optional[float] = None
+    # Valuation
+    pe_ratio: Optional[float] = None
+    pb_ratio: Optional[float] = None
+    ps_ratio: Optional[float] = None
+    ev_to_ebitda: Optional[float] = None
+    # Efficiency
+    asset_turnover: Optional[float] = None
+    inventory_turnover: Optional[float] = None
+
+
+class PeerRecord(BaseModel):
+    """A single peer stock in the same Damodaran industry."""
+
+    symbol: str
+    name: str
+    sector: Optional[str] = None
+    industry: Optional[str] = None

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import { Navigation } from "./Navigation";
+import { SearchBar } from "./SearchBar";
 
 export function Header() {
   return (
@@ -15,6 +16,7 @@ export function Header() {
           <Navigation />
         </div>
         <div className="flex items-center gap-4">
+          <SearchBar />
           <SignedOut>
             <SignInButton mode="modal">
               <button className="rounded-md bg-foreground px-3 py-1.5 text-sm font-medium text-background transition-colors hover:bg-foreground/90">
