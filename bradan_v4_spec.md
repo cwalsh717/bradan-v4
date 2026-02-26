@@ -18,7 +18,7 @@ Bradán v4 is a stock research and valuation tool built as a portfolio project. 
 | Frontend | Next.js (React) | Industry standard, good Clerk integration |
 | Database | PostgreSQL | Relational data model, strong JSONB support, Railway-native |
 | Auth | Clerk (free tier) | Managed auth service, 10k MAU free, JWT verification on FastAPI |
-| Hosting | Railway (3 services) | App, DB, and frontend as separate services |
+| Hosting | Railway (3 services) | App, DB, and frontend as separate services (deployed) |
 | Market Data | Twelve Data Pro tier ($230/mo) | Websockets (1,500 symbols), full financial statements, max history |
 | Economic Data | FRED API | Risk-free rates, treasury yields, credit spreads |
 | Valuation Framework | Damodaran (NYU) | 6 static reference datasets, updated annually |
@@ -42,6 +42,7 @@ Bradán v4 is a stock research and valuation tool built as a portfolio project. 
 - **FRED API → PostgreSQL:** Daily fetch for treasury yields, credit spreads. Stored with history for sparklines.
 - **Damodaran static files → PostgreSQL:** Annual manual/scripted refresh of industry reference data.
 - **PostgreSQL → FastAPI → Frontend:** All cached data served from DB. Ratios, TTM, P&L computed on the fly — never stored.
+- **CORS:** Backend allows requests from the Railway frontend domain via `CORSMiddleware`.
 
 ---
 
@@ -455,6 +456,18 @@ Manual script run before launch:
 
 ---
 
+## Twelve Data API Corrections (Discovered in Deployment)
+
+These corrections apply to the actual Twelve Data API responses vs what was originally assumed:
+
+- **Stock splits:** Returns `from_factor` / `to_factor` fields, plus `description` like "2-for-1". Original assumption of `ratio_from` / `ratio_to` was wrong — the service parses both formats.
+- **Earnings calendar:** Returns `{earnings: {date: [...]}}` nested structure, not a flat list.
+- **Search endpoint:** Now returns the standard response envelope (`data`, `data_as_of`, `next_refresh`) so `apiGet()` can unwrap consistently.
+- **Date fields:** SQLAlchemy returns `datetime.date` objects; Pydantic schemas must use `date` type, not `str`. Affects `PriceHistoryResponse`, `DividendResponse`, `SplitResponse`, `FinancialStatementResponse`.
+- **Pre-seeded stubs:** Stocks inserted by the pre-seed script have `last_updated=None` (profile data only). The stock router detects this and triggers a full data fetch on first view.
+
+---
+
 ## Error Handling Principles
 
 - **DCF eligibility** checked at request time by querying financial_statements and price_history — no stored status table
@@ -567,8 +580,9 @@ Three subagents in `.claude/agents/`:
 - Schema changes must be reflected in the spec before the phase is marked complete
 - The completion log must be updated with sub-phase detail (see Phase 1 for reference)
 
-### Future Tooling (Planned, Not Implemented)
-- **Puppeteer** — Phase 5+: end-to-end frontend testing and DCF valuation PDF export rendering
+### MCP Servers (Active)
+- **PostgreSQL (dbhub)** — Direct database access to Railway Postgres via MCP
+- **Puppeteer** — Browser automation for visual testing and DCF PDF export rendering
 
 ---
 
@@ -622,4 +636,9 @@ Three subagents in `.claude/agents/`:
 - [x] Phase 7f: Frontend portfolio types + auth fetch (Portfolio/Holding/PerformanceSummary/PortfolioSnapshot types; authFetch with Bearer token for non-envelope endpoints; useAuthSync hook)
 - [x] Phase 7g: Frontend portfolio pages (list page: create/delete/list portfolios; detail page /portfolio/[id]: performance summary cards in full mode, holdings table with symbol links, add/remove holdings; portfolio layout with auth sync)
 - [x] Phase 7h: Phase 7 test suite (36 new tests — 26 backend: 5 auth sync + 21 portfolio endpoints/CRUD/holdings/performance/history/auth-guard/ownership; 10 frontend: list page 5 + detail page 5; 374 total: 264 backend + 110 frontend)
-- [ ] Phase 8: Polish
+- [x] Phase 8a: Pre-seed script (preseed.py — S&P 500 + Nasdaq 100 symbols, staggered batches respecting 610 credits/min, preseed_single.py for single-stock API validation)
+- [x] Phase 8b: Rate limit monitoring (TwelveDataRateLimiter class — sliding window credit tracking; GET /api/system/rate-status endpoint)
+- [x] Phase 8c: Frontend polish components (ErrorState, FreshnessIndicator with relative timestamps, LoadingSkeleton; formatRelativeTime + formatTimestamp utilities)
+- [x] Phase 8d: Phase 8 test suite (41 new tests — 16 backend: preseed + rate limits; 25 frontend: ErrorState + FreshnessIndicator + LoadingSkeleton + format utils; 415 total)
+- [x] Phase 8e: Railway deployment (railway.toml + .dockerignore for both services, .env.production for frontend, CORS middleware on backend)
+- [x] Phase 8f: Live API shape fixes (Twelve Data split parsing uses from_factor/to_factor; earnings calendar returns {earnings:{date:[...]}}; search endpoint returns standard envelope; Pydantic date type coercion for price-history/financials/dividends; pre-seeded stubs trigger data fetch on first view; 416 total tests: 280 backend + 136 frontend)
