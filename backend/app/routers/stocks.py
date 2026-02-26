@@ -109,7 +109,7 @@ async def get_stock_profile(
     result = await session.execute(select(Stock).where(Stock.symbol == symbol.upper()))
     stock = result.scalar_one_or_none()
 
-    if stock is None:
+    if stock is None or stock.last_updated is None:
         svc = StockDataService(client=twelvedata, session=session)
         stock = await svc.fetch_full_profile(symbol)
 

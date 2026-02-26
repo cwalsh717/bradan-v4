@@ -5,7 +5,7 @@ dependency providers via app.dependency_overrides, then exercise the endpoints
 through httpx.ASGITransport + AsyncClient.
 """
 
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from httpx import ASGITransport, AsyncClient
@@ -153,6 +153,50 @@ async def test_profile_uncached_triggers_fetch():
 
 
 # ---------------------------------------------------------------------------
+# 2b. GET /api/stocks/{symbol}/profile — pre-seeded stub triggers fetch
+# ---------------------------------------------------------------------------
+
+
+async def test_profile_preseeded_stub_triggers_fetch():
+    """When a pre-seeded stub exists (last_updated=None), fetch_full_profile is called."""
+    stub_stock = _make_mock_stock(last_updated=None)
+    fetched_stock = _make_mock_stock()
+
+    # Call 1: stock lookup -> returns stub with last_updated=None
+    # After fetch_full_profile runs, the endpoint uses the returned stock.
+    # Call 2: _next_refresh_for_stock earnings query -> None
+    mock_db = _make_session_with_side_effects(
+        [
+            _scalar_one_or_none_result(stub_stock),  # stock lookup -> stub
+            _scalar_one_or_none_result(None),  # earnings calendar query
+        ]
+    )
+
+    mock_td = AsyncMock()
+
+    app.dependency_overrides[get_session] = _session_override(mock_db)
+    app.dependency_overrides[get_twelvedata] = lambda: mock_td
+
+    try:
+        with patch("app.routers.stocks.StockDataService") as MockSvc:
+            mock_instance = AsyncMock()
+            mock_instance.fetch_full_profile = AsyncMock(return_value=fetched_stock)
+            MockSvc.return_value = mock_instance
+
+            transport = ASGITransport(app=app)
+            async with AsyncClient(transport=transport, base_url="http://test") as c:
+                resp = await c.get("/api/stocks/AAPL/profile")
+
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["data"]["symbol"] == "AAPL"
+        MockSvc.assert_called_once_with(client=mock_td, session=mock_db)
+        mock_instance.fetch_full_profile.assert_called_once_with("AAPL")
+    finally:
+        app.dependency_overrides.clear()
+
+
+# ---------------------------------------------------------------------------
 # 3. GET /api/stocks/{symbol}/financials?period=annual
 # ---------------------------------------------------------------------------
 
@@ -166,7 +210,7 @@ async def test_financials_annual():
     stmt1.id = 10
     stmt1.statement_type = "income"
     stmt1.period = "annual"
-    stmt1.fiscal_date = "2024-12-31"
+    stmt1.fiscal_date = date(2024, 12, 31)
     stmt1.data = {"revenue": 100000}
     stmt1.fetched_at = now
 
@@ -295,7 +339,7 @@ async def test_price_history():
 
     row = MagicMock()
     row.id = 100
-    row.date = "2025-05-30"
+    row.date = date(2025, 5, 30)
     row.open = 190.0
     row.high = 195.0
     row.low = 189.0
@@ -343,7 +387,7 @@ async def test_dividends():
 
     div = MagicMock()
     div.id = 200
-    div.ex_date = "2025-05-15"
+    div.ex_date = date(2025, 5, 15)
     div.amount = 0.25
     div.fetched_at = now
 
@@ -386,7 +430,7 @@ async def test_splits():
 
     split = MagicMock()
     split.id = 300
-    split.date = "2020-08-31"
+    split.date = date(2020, 8, 31)
     split.ratio_from = 1
     split.ratio_to = 4
 

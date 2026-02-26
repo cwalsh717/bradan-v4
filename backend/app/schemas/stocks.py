@@ -1,6 +1,6 @@
 """Pydantic response schemas for stock profile endpoints."""
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any, Optional
 
 from pydantic import BaseModel
@@ -35,7 +35,7 @@ class FinancialRecord(BaseModel):
     id: int
     statement_type: str
     period: str
-    fiscal_date: str
+    fiscal_date: date
     data: dict
     fetched_at: datetime
 
@@ -46,7 +46,7 @@ class PriceRecord(BaseModel):
     """A single price history record."""
 
     id: int
-    date: str
+    date: date
     open: float
     high: float
     low: float
@@ -61,7 +61,7 @@ class DividendRecord(BaseModel):
     """A single dividend record."""
 
     id: int
-    ex_date: str
+    ex_date: date
     amount: float
     fetched_at: datetime
 
@@ -72,7 +72,7 @@ class SplitRecord(BaseModel):
     """A single stock split record."""
 
     id: int
-    date: str
+    date: date
     ratio_from: int
     ratio_to: int
 
