@@ -56,6 +56,7 @@ const PROFILE: StockProfile = {
   sector: "Technology",
   industry: "Consumer Electronics",
   currency: "USD",
+  last_updated: "2026-02-25T12:00:00Z",
 };
 
 const RATIOS: FinancialRatios = {

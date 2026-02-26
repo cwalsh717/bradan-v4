@@ -14,7 +14,7 @@ export interface DashboardTicker {
 export interface PriceUpdate {
   symbol: string;
   price: number;
-  timestamp: string;
+  timestamp: string | number;
   change?: number;
   change_percent?: number;
 }
@@ -27,6 +27,7 @@ export interface StockProfile {
   sector: string;
   industry: string;
   currency: string;
+  last_updated: string | null;
 }
 
 // Search result

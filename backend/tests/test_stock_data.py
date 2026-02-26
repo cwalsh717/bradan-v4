@@ -491,14 +491,15 @@ class TestFetchDividends:
 
 
 class TestFetchSplits:
-    async def test_insert_new_splits_with_ratio_fields(self):
-        """Splits with explicit ratio_from/ratio_to fields are used directly."""
+    async def test_insert_new_splits_with_factor_fields(self):
+        """Splits with explicit from_factor/to_factor fields are used directly."""
         client = _mock_client()
         session = _mock_session()
 
         client.get_splits = AsyncMock(
             return_value=[
-                {"date": "2020-08-31", "ratio_from": "1", "ratio_to": "4"},
+                {"date": "2020-08-31", "from_factor": "4", "to_factor": "1",
+                 "description": "4-for-1 split", "ratio": 0.25},
             ]
         )
 
@@ -513,19 +514,19 @@ class TestFetchSplits:
 
         assert count == 1
         assert session.add.call_count == 1
-        # Verify the StockSplit object
+        # Verify the StockSplit object — 4-for-1 means FROM 1 old TO 4 new
         added_obj = session.add.call_args[0][0]
-        assert added_obj.ratio_to == 4
         assert added_obj.ratio_from == 1
+        assert added_obj.ratio_to == 4
 
     async def test_ratio_parsed_from_description(self):
-        """When ratio_from/ratio_to absent, parse from description."""
+        """When from_factor/to_factor absent, parse from description."""
         client = _mock_client()
         session = _mock_session()
 
         client.get_splits = AsyncMock(
             return_value=[
-                {"date": "2020-08-31", "description": "4:1"},
+                {"date": "2020-08-31", "description": "4-for-1 split"},
             ]
         )
 

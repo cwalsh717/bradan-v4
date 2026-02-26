@@ -28,16 +28,25 @@ def _parse_date(value: str) -> date:
 
 
 def _parse_split_ratio(description: str) -> tuple[int, int]:
-    """Parse a split ratio from a description like '4:1' or '2:1'.
+    """Parse a split ratio from a description like '4:1', '4-for-1 split', etc.
 
     Returns (ratio_to, ratio_from) — e.g. '4:1' means 4 new shares for 1 old share.
     """
+    import re
+
+    # Try "X:Y" format
     parts = description.strip().split(":")
     if len(parts) == 2:
         try:
             return int(parts[0]), int(parts[1])
         except ValueError:
             pass
+
+    # Try "X-for-Y" format (e.g. "4-for-1 split")
+    match = re.search(r"(\d+)-for-(\d+)", description)
+    if match:
+        return int(match.group(1)), int(match.group(2))
+
     # Fallback: 1:1 (no-op)
     logger.warning("Could not parse split ratio from description: %s", description)
     return 1, 1
@@ -341,11 +350,12 @@ class StockDataService:
             if split_date in existing_dates:
                 continue
 
-            # Parse ratio — Twelve Data may provide ratio_from/ratio_to fields
-            # or a description like "4:1"
-            if "ratio_from" in split and "ratio_to" in split:
-                ratio_to = int(split["ratio_to"])
-                ratio_from = int(split["ratio_from"])
+            # Parse ratio — Twelve Data provides from_factor/to_factor fields
+            # or a description like "4-for-1 split" or "4:1"
+            # from_factor = new shares count, to_factor = old shares count
+            if "from_factor" in split and "to_factor" in split:
+                ratio_to = int(split["from_factor"])
+                ratio_from = int(split["to_factor"])
             else:
                 description = split.get("description", "1:1")
                 ratio_to, ratio_from = _parse_split_ratio(description)

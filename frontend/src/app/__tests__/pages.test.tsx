@@ -3,6 +3,7 @@ import { describe, it, expect, vi } from "vitest";
 import { render, screen, act, waitFor } from "@testing-library/react";
 
 vi.mock("@/lib/api", () => ({
+  API_BASE: "http://localhost:8000",
   apiGet: vi.fn().mockResolvedValue({ categories: [] }),
   apiFetch: vi.fn().mockResolvedValue({ data: null, data_as_of: "", next_refresh: null }),
   authFetch: vi.fn().mockResolvedValue([]),
@@ -32,6 +33,10 @@ import DCFPage from "@/app/dcf/[symbol]/page";
 
 describe("DashboardPage", () => {
   it("renders heading", () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ categories: [] }),
+    });
     render(<DashboardPage />);
     expect(screen.getByText("Market Dashboard")).toBeInTheDocument();
   });

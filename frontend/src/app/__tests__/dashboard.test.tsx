@@ -1,11 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 
-const mockApiGet = vi.fn();
 const mockUseWebSocket = vi.fn();
 
 vi.mock("@/lib/api", () => ({
-  apiGet: (...args: unknown[]) => mockApiGet(...args),
+  API_BASE: "http://localhost:8000",
 }));
 
 vi.mock("@/lib/ws", () => ({
@@ -44,8 +43,8 @@ beforeEach(() => {
 
 describe("DashboardPage", () => {
   it("renders loading state initially", () => {
-    // apiGet never resolves — stays in loading
-    mockApiGet.mockReturnValue(new Promise(() => {}));
+    // fetch never resolves — stays in loading
+    global.fetch = vi.fn().mockReturnValue(new Promise(() => {}));
 
     render(<DashboardPage />);
 
@@ -54,24 +53,28 @@ describe("DashboardPage", () => {
   });
 
   it("renders category sections after config loads", async () => {
-    mockApiGet.mockResolvedValue({
-      categories: [
-        {
-          name: "equities",
-          tickers: [makeTicker()],
-        },
-        {
-          name: "crypto",
-          tickers: [
-            makeTicker({
-              id: 2,
-              category: "crypto",
-              display_name: "Bitcoin (BTC/USD)",
-              symbol: "BTC/USD",
-            }),
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          categories: [
+            {
+              name: "equities",
+              tickers: [makeTicker()],
+            },
+            {
+              name: "crypto",
+              tickers: [
+                makeTicker({
+                  id: 2,
+                  category: "crypto",
+                  display_name: "Bitcoin (BTC/USD)",
+                  symbol: "BTC/USD",
+                }),
+              ],
+            },
           ],
-        },
-      ],
+        }),
     });
 
     render(<DashboardPage />);

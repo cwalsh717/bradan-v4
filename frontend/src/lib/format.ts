@@ -114,10 +114,10 @@ export function formatRatio(
  * Format a date as relative time: "Just now", "5 min ago", "3 hours ago", "Yesterday", "3 days ago".
  */
 export function formatRelativeTime(
-  date: string | Date | null | undefined,
+  date: string | number | Date | null | undefined,
 ): string {
-  if (!date) return EM_DASH;
-  const d = typeof date === "string" ? new Date(date) : date;
+  if (!date && date !== 0) return EM_DASH;
+  const d = typeof date === "number" ? new Date(date * 1000) : typeof date === "string" ? new Date(date) : date;
   if (isNaN(d.getTime())) return EM_DASH;
 
   const diffMs = Date.now() - d.getTime();

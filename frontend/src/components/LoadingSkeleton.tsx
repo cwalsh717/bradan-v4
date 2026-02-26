@@ -3,6 +3,8 @@
  * Uses Tailwind animate-pulse for a shimmer effect.
  */
 
+import type { JSX } from "react";
+
 interface LoadingSkeletonProps {
   variant?: "card" | "table" | "chart" | "text";
   count?: number;

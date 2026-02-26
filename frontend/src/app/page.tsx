@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { apiGet } from "@/lib/api";
+import { API_BASE } from "@/lib/api";
 import { useWebSocket } from "@/lib/ws";
 import type { DashboardCategory, PriceUpdate } from "@/lib/types";
 import { CategorySection } from "@/components/dashboard/CategorySection";
@@ -39,8 +39,12 @@ export default function DashboardPage() {
   const fetchConfig = useCallback(() => {
     setLoading(true);
     setError(null);
-    apiGet<{ categories: DashboardCategory[] }>("/api/dashboard/config")
-      .then((data) => {
+    fetch(`${API_BASE}/api/dashboard/config`)
+      .then((r) => {
+        if (!r.ok) throw new Error(r.statusText);
+        return r.json();
+      })
+      .then((data: { categories: DashboardCategory[] }) => {
         setCategories(sortCategories(data.categories));
         setLoading(false);
       })

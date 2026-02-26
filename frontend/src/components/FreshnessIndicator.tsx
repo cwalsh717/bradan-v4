@@ -6,7 +6,7 @@
 import { formatRelativeTime } from "@/lib/format";
 
 interface FreshnessIndicatorProps {
-  timestamp: string | Date | null | undefined;
+  timestamp: string | number | Date | null | undefined;
 }
 
 function freshnessColor(date: Date): string {
@@ -17,10 +17,16 @@ function freshnessColor(date: Date): string {
   return "bg-red-500";
 }
 
-export function FreshnessIndicator({ timestamp }: FreshnessIndicatorProps) {
-  if (!timestamp) return null;
+function toDate(ts: string | number | Date): Date {
+  if (ts instanceof Date) return ts;
+  if (typeof ts === "number") return new Date(ts * 1000);
+  return new Date(ts);
+}
 
-  const date = typeof timestamp === "string" ? new Date(timestamp) : timestamp;
+export function FreshnessIndicator({ timestamp }: FreshnessIndicatorProps) {
+  if (!timestamp && timestamp !== 0) return null;
+
+  const date = toDate(timestamp);
   if (isNaN(date.getTime())) return null;
 
   return (

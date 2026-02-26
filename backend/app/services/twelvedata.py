@@ -193,6 +193,20 @@ class TwelveDataClient:
         return data.get("splits", [])
 
     async def get_earnings_calendar(self, symbol: str) -> List[dict]:
-        """Get upcoming and past earnings dates."""
+        """Get upcoming and past earnings dates.
+
+        The API returns {"earnings": {"YYYY-MM-DD": [...]}} grouped by date.
+        We flatten and filter to the requested symbol.
+        """
         data = await self._get("/earnings_calendar", {"symbol": symbol})
-        return data.get("earnings_calendar", [])
+        earnings_by_date = data.get("earnings", {})
+        if not isinstance(earnings_by_date, dict):
+            return []
+
+        results: List[dict] = []
+        for date_str, entries in earnings_by_date.items():
+            for entry in entries:
+                if entry.get("symbol", "").upper() == symbol.upper():
+                    entry["date"] = date_str
+                    results.append(entry)
+        return results

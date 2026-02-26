@@ -159,14 +159,20 @@ async def test_get_splits():
 async def test_get_earnings_calendar():
     client = await _make_client(
         {
-            "earnings_calendar": [
-                {"report_date": "2025-10-30", "fiscal_quarter": "Q4 2025"},
-            ]
+            "earnings": {
+                "2025-10-30": [
+                    {"symbol": "AAPL", "name": "Apple Inc.",
+                     "eps_estimate": 1.45, "eps_actual": None,
+                     "time": "After Hours"},
+                ]
+            },
+            "status": "ok",
         }
     )
     results = await client.get_earnings_calendar("AAPL")
     assert len(results) == 1
-    assert results[0]["fiscal_quarter"] == "Q4 2025"
+    assert results[0]["date"] == "2025-10-30"
+    assert results[0]["symbol"] == "AAPL"
     await client.close()
 
 
