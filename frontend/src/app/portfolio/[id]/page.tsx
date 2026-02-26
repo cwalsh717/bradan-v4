@@ -6,6 +6,7 @@ import Link from "next/link";
 import { authFetch } from "@/lib/api";
 import { formatCurrency, formatChange, changeColor, formatDate } from "@/lib/format";
 import type { Portfolio, Holding, PerformanceSummary } from "@/lib/types";
+import { ErrorState } from "@/components/ErrorState";
 
 interface PortfolioDetailProps {
   params: Promise<{ id: string }>;
@@ -129,8 +130,8 @@ export default function PortfolioDetailPage({ params }: PortfolioDetailProps) {
       </div>
 
       {error && (
-        <div className="mb-4 rounded-md bg-red-50 px-4 py-2 text-sm text-red-800 dark:bg-red-900/30 dark:text-red-200">
-          {error}
+        <div className="mb-4">
+          <ErrorState message={error} onRetry={fetchData} />
         </div>
       )}
 

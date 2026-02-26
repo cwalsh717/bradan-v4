@@ -84,6 +84,14 @@ async def get_risk_free_rate(
     }
 
 
+@router.get("/api/system/rate-status")
+async def rate_status(
+    twelvedata: TwelveDataClient = Depends(get_twelvedata),
+):
+    """Return current Twelve Data API rate limit usage."""
+    return twelvedata.rate_tracker.get_status()
+
+
 @router.get("/api/glossary")
 async def get_glossary(db: AsyncSession = Depends(get_session)):
     """Return all glossary entries ordered by category and term."""

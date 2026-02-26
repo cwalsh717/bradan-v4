@@ -16,6 +16,8 @@ import type {
   PeerStock,
   PriceUpdate,
 } from "@/lib/types";
+import { ErrorState } from "@/components/ErrorState";
+import { FreshnessIndicator } from "@/components/FreshnessIndicator";
 
 interface StockProfilePageProps {
   params: Promise<{ symbol: string }>;
@@ -125,7 +127,9 @@ export default function StockProfilePage({ params }: StockProfilePageProps) {
     return (
       <main className="p-8">
         <h1 className="text-2xl font-bold">{upperSymbol}</h1>
-        <p className="mt-4 text-red-500">{error}</p>
+        <div className="mt-4">
+          <ErrorState message={error} onRetry={fetchData} />
+        </div>
       </main>
     );
   }
@@ -165,6 +169,7 @@ export default function StockProfilePage({ params }: StockProfilePageProps) {
                 {profile.industry}
               </span>
             )}
+            <FreshnessIndicator timestamp={profile?.last_updated} />
           </div>
         </div>
 

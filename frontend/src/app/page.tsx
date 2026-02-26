@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { apiGet } from "@/lib/api";
 import { useWebSocket } from "@/lib/ws";
 import type { DashboardCategory, PriceUpdate } from "@/lib/types";
 import { CategorySection } from "@/components/dashboard/CategorySection";
+import { ErrorState } from "@/components/ErrorState";
 
 const CATEGORY_ORDER = [
   "equities",
@@ -32,27 +33,26 @@ function sortCategories(categories: DashboardCategory[]): DashboardCategory[] {
 export default function DashboardPage() {
   const [categories, setCategories] = useState<DashboardCategory[] | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [prices, setPrices] = useState<Record<string, PriceUpdate>>({});
 
-  // Fetch dashboard config on mount
-  useEffect(() => {
-    let cancelled = false;
+  const fetchConfig = useCallback(() => {
+    setLoading(true);
+    setError(null);
     apiGet<{ categories: DashboardCategory[] }>("/api/dashboard/config")
       .then((data) => {
-        if (!cancelled) {
-          setCategories(sortCategories(data.categories));
-          setLoading(false);
-        }
+        setCategories(sortCategories(data.categories));
+        setLoading(false);
       })
       .catch(() => {
-        if (!cancelled) {
-          setLoading(false);
-        }
+        setError("Failed to load dashboard data");
+        setLoading(false);
       });
-    return () => {
-      cancelled = true;
-    };
   }, []);
+
+  useEffect(() => {
+    fetchConfig();
+  }, [fetchConfig]);
 
   // Connect to live price stream
   const { data: streamData, isConnected } = useWebSocket<DashboardStream>(
@@ -84,6 +84,10 @@ export default function DashboardPage() {
         <div className="mb-6 rounded-md bg-yellow-50 px-4 py-2 text-sm text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200">
           Live prices disconnected
         </div>
+      )}
+
+      {error && !loading && (
+        <ErrorState message={error} onRetry={fetchConfig} />
       )}
 
       {loading ? (

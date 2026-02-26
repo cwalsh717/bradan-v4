@@ -109,3 +109,26 @@ export function formatRatio(
   if (value == null || isNaN(value)) return "N/A";
   return value.toFixed(2);
 }
+
+/**
+ * Format a date as relative time: "Just now", "5 min ago", "3 hours ago", "Yesterday", "3 days ago".
+ */
+export function formatRelativeTime(
+  date: string | Date | null | undefined,
+): string {
+  if (!date) return EM_DASH;
+  const d = typeof date === "string" ? new Date(date) : date;
+  if (isNaN(d.getTime())) return EM_DASH;
+
+  const diffMs = Date.now() - d.getTime();
+  const seconds = Math.floor(diffMs / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+
+  if (seconds < 60) return "Just now";
+  if (minutes < 60) return `${minutes} min ago`;
+  if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"} ago`;
+  if (days === 1) return "Yesterday";
+  return `${days} days ago`;
+}

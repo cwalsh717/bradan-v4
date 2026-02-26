@@ -8,6 +8,7 @@ import {
   formatChange,
   changeColor,
 } from "@/lib/format";
+import { FreshnessIndicator } from "@/components/FreshnessIndicator";
 
 interface TickerCardProps {
   ticker: DashboardTicker;
@@ -51,6 +52,11 @@ export function TickerCard({ ticker, price }: TickerCardProps) {
         </>
       ) : (
         <div className="text-xl text-foreground/30">&mdash;</div>
+      )}
+      {price?.timestamp && (
+        <div className="mt-1">
+          <FreshnessIndicator timestamp={price.timestamp} />
+        </div>
       )}
     </div>
   );

@@ -1,5 +1,6 @@
 import logging
 import time
+from datetime import datetime, timezone
 from typing import List, Optional
 
 import httpx
@@ -10,6 +11,74 @@ logger = logging.getLogger(__name__)
 
 BASE_URL = "https://api.twelvedata.com"
 RATE_LIMIT = 610  # credits per minute
+
+# Credit cost per endpoint (Twelve Data Pro tier)
+ENDPOINT_CREDITS: dict[str, int] = {
+    "/income_statement": 100,
+    "/balance_sheet": 100,
+    "/cash_flow": 100,
+    "/profile": 1,
+    "/time_series": 1,
+    "/dividends": 1,
+    "/splits": 1,
+    "/earnings_calendar": 1,
+    "/symbol_search": 1,
+}
+
+
+class RateLimitTracker:
+    """In-memory tracker for Twelve Data API usage."""
+
+    def __init__(self):
+        self._today: str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        self._calls: int = 0
+        self._credits: int = 0
+        self._endpoints: dict[str, dict[str, int]] = {}
+        self._last_call: Optional[str] = None
+        self._api_reported_used: Optional[int] = None
+        self._api_reported_remaining: Optional[int] = None
+
+    def _maybe_reset(self):
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        if today != self._today:
+            self._today = today
+            self._calls = 0
+            self._credits = 0
+            self._endpoints = {}
+            self._api_reported_used = None
+            self._api_reported_remaining = None
+
+    def record_call(self, endpoint: str, headers: Optional[dict]):
+        self._maybe_reset()
+        cost = ENDPOINT_CREDITS.get(endpoint, 1)
+        self._calls += 1
+        self._credits += cost
+        self._last_call = datetime.now(timezone.utc).isoformat()
+
+        if endpoint not in self._endpoints:
+            self._endpoints[endpoint] = {"calls": 0, "credits": 0}
+        self._endpoints[endpoint]["calls"] += 1
+        self._endpoints[endpoint]["credits"] += cost
+
+        if headers:
+            used = headers.get("x-ratelimit-used")
+            remaining = headers.get("x-ratelimit-remaining")
+            if used is not None:
+                self._api_reported_used = int(used)
+            if remaining is not None:
+                self._api_reported_remaining = int(remaining)
+
+    def get_status(self) -> dict:
+        self._maybe_reset()
+        return {
+            "date": self._today,
+            "calls_today": self._calls,
+            "credits_used_today": self._credits,
+            "last_call": self._last_call,
+            "endpoints": dict(self._endpoints),
+            "api_reported_used": self._api_reported_used,
+            "api_reported_remaining": self._api_reported_remaining,
+        }
 
 
 class TwelveDataClient:
@@ -32,6 +101,7 @@ class TwelveDataClient:
         self.api_key = api_key
         self.client = httpx.AsyncClient(base_url=BASE_URL, timeout=30.0)
         self._request_timestamps: List[float] = []
+        self.rate_tracker = RateLimitTracker()
 
     async def close(self):
         await self.client.aclose()
@@ -51,6 +121,8 @@ class TwelveDataClient:
         logger.debug("Twelve Data API call: %s symbol=%s", endpoint, symbol)
 
         resp = await self.client.get(endpoint, params=params)
+        self.rate_tracker.record_call(endpoint, dict(resp.headers))
+
         if resp.status_code != 200:
             raise TwelveDataError(
                 f"HTTP {resp.status_code} from {endpoint}", resp.status_code

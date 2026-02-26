@@ -10,6 +10,8 @@ import { EquityBridge } from "@/components/dcf/EquityBridge";
 import { ProjectionTable } from "@/components/dcf/ProjectionTable";
 import { SensitivityTable } from "@/components/dcf/SensitivityTable";
 import { formatPercent, formatLargeNumber } from "@/lib/format";
+import { ErrorState } from "@/components/ErrorState";
+import { FreshnessIndicator } from "@/components/FreshnessIndicator";
 
 interface DCFPageProps {
   params: Promise<{ symbol: string }>;
@@ -27,6 +29,8 @@ export default function DCFPage({ params }: DCFPageProps) {
   const [showFullModel, setShowFullModel] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [fetchKey, setFetchKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -64,7 +68,11 @@ export default function DCFPage({ params }: DCFPageProps) {
     return () => {
       cancelled = true;
     };
-  }, [upperSymbol]);
+  }, [upperSymbol, fetchKey]);
+
+  const retryFetch = useCallback(() => {
+    setFetchKey((k) => k + 1);
+  }, []);
 
   const handleScenarioSelect = useCallback(
     async (scenario: string) => {
@@ -90,7 +98,15 @@ export default function DCFPage({ params }: DCFPageProps) {
   if (loading) {
     return (
       <main className="p-8">
-        <p className="text-foreground/60">Loading DCF valuation for {upperSymbol}...</p>
+        <div className="animate-pulse space-y-6">
+          <div className="h-8 w-64 rounded bg-foreground/10" />
+          <div className="h-4 w-48 rounded bg-foreground/10" />
+          <div className="grid grid-cols-3 gap-4">
+            <div className="h-24 rounded-lg bg-foreground/5" />
+            <div className="h-24 rounded-lg bg-foreground/5" />
+            <div className="h-24 rounded-lg bg-foreground/5" />
+          </div>
+        </div>
       </main>
     );
   }
@@ -99,7 +115,12 @@ export default function DCFPage({ params }: DCFPageProps) {
     return (
       <main className="p-8">
         <h1 className="text-2xl font-bold">DCF — {upperSymbol}</h1>
-        <p className="mt-2 text-red-500">{error || "No data available"}</p>
+        <div className="mt-2">
+          <ErrorState
+            message={error || "No data available"}
+            onRetry={retryFetch}
+          />
+        </div>
       </main>
     );
   }
@@ -108,6 +129,9 @@ export default function DCFPage({ params }: DCFPageProps) {
     <main className="p-8">
       {/* Level 1: Headline — always visible */}
       <Headline result={result} />
+      <div className="mt-2">
+        <FreshnessIndicator timestamp={result.computed_at} />
+      </div>
 
       <div className="mt-6">
         <button

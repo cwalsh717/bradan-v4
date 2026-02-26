@@ -6,6 +6,7 @@ import Link from "next/link";
 import { authFetch } from "@/lib/api";
 import { formatDate } from "@/lib/format";
 import type { Portfolio } from "@/lib/types";
+import { ErrorState } from "@/components/ErrorState";
 
 export default function PortfolioPage() {
   const { getToken } = useAuth();
@@ -76,8 +77,8 @@ export default function PortfolioPage() {
       </div>
 
       {error && (
-        <div className="mb-4 rounded-md bg-red-50 px-4 py-2 text-sm text-red-800 dark:bg-red-900/30 dark:text-red-200">
-          {error}
+        <div className="mb-4">
+          <ErrorState message={error} onRetry={fetchPortfolios} />
         </div>
       )}
 
@@ -118,11 +119,11 @@ export default function PortfolioPage() {
             <div key={i} className="mb-3 h-20 animate-pulse rounded-lg bg-gray-100 dark:bg-gray-800" />
           ))}
         </div>
-      ) : portfolios.length === 0 ? (
+      ) : portfolios.length === 0 && !error ? (
         <div className="rounded-lg border border-foreground/10 p-8 text-center text-foreground/60">
           No portfolios yet. Create one to get started.
         </div>
-      ) : (
+      ) : portfolios.length > 0 ? (
         <div className="space-y-3">
           {portfolios.map((p) => (
             <div
@@ -151,7 +152,7 @@ export default function PortfolioPage() {
             </div>
           ))}
         </div>
-      )}
+      ) : null}
     </main>
   );
 }

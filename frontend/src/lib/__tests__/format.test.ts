@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   formatCurrency,
   formatPercent,
@@ -7,6 +7,7 @@ import {
   changeColor,
   formatDate,
   formatRatio,
+  formatRelativeTime,
 } from "../format";
 
 describe("formatCurrency", () => {
@@ -161,5 +162,57 @@ describe("formatRatio", () => {
 
   it("formats zero", () => {
     expect(formatRatio(0)).toBe("0.00");
+  });
+});
+
+describe("formatRelativeTime", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-02-25T12:00:00Z"));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("returns 'Just now' for < 60 seconds", () => {
+    expect(formatRelativeTime("2026-02-25T11:59:30Z")).toBe("Just now");
+  });
+
+  it("returns minutes for < 1 hour", () => {
+    expect(formatRelativeTime("2026-02-25T11:55:00Z")).toBe("5 min ago");
+  });
+
+  it("returns hours for < 24 hours", () => {
+    expect(formatRelativeTime("2026-02-25T09:00:00Z")).toBe("3 hours ago");
+  });
+
+  it("returns singular hour", () => {
+    expect(formatRelativeTime("2026-02-25T11:00:00Z")).toBe("1 hour ago");
+  });
+
+  it("returns 'Yesterday' for 1 day", () => {
+    expect(formatRelativeTime("2026-02-24T12:00:00Z")).toBe("Yesterday");
+  });
+
+  it("returns days for > 1 day", () => {
+    expect(formatRelativeTime("2026-02-22T12:00:00Z")).toBe("3 days ago");
+  });
+
+  it("returns em dash for null", () => {
+    expect(formatRelativeTime(null)).toBe("\u2014");
+  });
+
+  it("returns em dash for undefined", () => {
+    expect(formatRelativeTime(undefined)).toBe("\u2014");
+  });
+
+  it("returns em dash for invalid date", () => {
+    expect(formatRelativeTime("not-a-date")).toBe("\u2014");
+  });
+
+  it("accepts Date objects", () => {
+    const fiveMinAgo = new Date("2026-02-25T11:55:00Z");
+    expect(formatRelativeTime(fiveMinAgo)).toBe("5 min ago");
   });
 });
