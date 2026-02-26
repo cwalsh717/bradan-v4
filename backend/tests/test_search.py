@@ -53,8 +53,9 @@ async def test_search_endpoint_returns_results():
 
         assert resp.status_code == 200
         data = resp.json()
-        assert "results" in data
-        assert len(data["results"]) >= 1
+        assert "data" in data
+        assert "data_as_of" in data
+        assert len(data["data"]) >= 1
     finally:
         app.dependency_overrides.clear()
 

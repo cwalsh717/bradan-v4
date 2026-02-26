@@ -53,7 +53,8 @@ async def search_stocks(
 ):
     service = SearchService(twelvedata)
     results = await service.search(q, db)
-    return {"results": results}
+    now = datetime.now(timezone.utc)
+    return {"data": results, "data_as_of": now.isoformat(), "next_refresh": None}
 
 
 @router.get("/api/rates/risk-free")

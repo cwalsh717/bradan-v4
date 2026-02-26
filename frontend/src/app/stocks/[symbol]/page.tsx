@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import { apiGet } from "@/lib/api";
 import { useWebSocket } from "@/lib/ws";
 import { formatCurrency, formatChange, changeColor, formatDate } from "@/lib/format";
@@ -173,18 +174,26 @@ export default function StockProfilePage({ params }: StockProfilePageProps) {
           </div>
         </div>
 
-        {currentPrice != null && (
-          <div className="text-right">
-            <p className="text-3xl font-bold tabular-nums">
-              {formatCurrency(currentPrice, profile?.currency)}
-            </p>
-            {priceChange != null && (
-              <p className={`text-sm font-medium ${changeColor(priceChange)}`}>
-                {formatChange(priceChange)}
+        <div className="flex items-start gap-4">
+          {currentPrice != null && (
+            <div className="text-right">
+              <p className="text-3xl font-bold tabular-nums">
+                {formatCurrency(currentPrice, profile?.currency)}
               </p>
-            )}
-          </div>
-        )}
+              {priceChange != null && (
+                <p className={`text-sm font-medium ${changeColor(priceChange)}`}>
+                  {formatChange(priceChange)}
+                </p>
+              )}
+            </div>
+          )}
+          <Link
+            href={`/dcf/${upperSymbol}`}
+            className="rounded-lg border border-foreground/20 px-4 py-2 text-sm font-medium transition-colors hover:bg-foreground/5"
+          >
+            View DCF Valuation
+          </Link>
+        </div>
       </div>
 
       {/* ------------------------------------------------------------------ */}
