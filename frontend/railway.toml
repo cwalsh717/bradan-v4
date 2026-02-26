@@ -1,5 +1,6 @@
 [build]
 dockerfilePath = "Dockerfile"
+watchPatterns = ["frontend/**"]
 
 [deploy]
 restartPolicyType = "ON_FAILURE"
